@@ -24,7 +24,7 @@ dependencies:
 Initialise `nostr_dart`:
 
 ```dart
-import 'package:nostr/nostr.dart';
+import 'package:nostr_dart/nostr_dart.dart'
 
 final nostr = Nostr.init(privateKey: [private key], powDifficulty: [difficulty]);
 ```
