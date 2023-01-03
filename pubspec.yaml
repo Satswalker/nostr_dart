@@ -1,0 +1,16 @@
+name: nostr
+description: A Nostr protocol library.
+publish_to: 'none'
+version: 0.0.0
+# homepage: https://www.example.com
+
+environment:
+  sdk: '>=2.17.6 <3.0.0'
+
+# dependencies:
+#   path: ^1.8.0
+
+dev_dependencies:
+  lints: ^2.0.0
+  test: ^1.16.0
+dependencies: {bip340: ^0.0.4, clock: ^1.1.1, crypto: ^3.0.2, hex: ^0.2.0, string_validator: ^0.3.0, web_socket_channel: ^2.2.0}
