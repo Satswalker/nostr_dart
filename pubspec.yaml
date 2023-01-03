@@ -1,5 +1,5 @@
 name: nostr_dart
-version: 0.1.0
+version: 0.1.1
 description: A Nostr client library written in Dart
 homepage: https://github.com/Satswalker/nostr_dart
 repository: https://github.com/Satswalker/nostr_dart
