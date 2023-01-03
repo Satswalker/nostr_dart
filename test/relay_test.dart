@@ -1,12 +1,12 @@
-import 'package:nostr/src/relay.dart';
-import 'package:nostr/src/subscription.dart';
-import 'package:nostr/src/event.dart';
+import 'package:nostr_dart/src/relay.dart';
+import 'package:nostr_dart/src/subscription.dart';
+import 'package:nostr_dart/src/event.dart';
 import '../test/constants.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:test/test.dart';
 import 'package:string_validator/string_validator.dart' as hex_string;
-import 'package:nostr/src/util.dart';
+import 'package:nostr_dart/src/util.dart';
 
 void main() {
   group('connect/disconnect:', () {

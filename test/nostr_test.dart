@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:nostr/nostr.dart';
+import 'package:nostr_dart/nostr.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'constants.dart';

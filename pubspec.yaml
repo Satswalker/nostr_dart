@@ -1,15 +1,11 @@
-name: nostr
-description: A Nostr protocol library.
-publish_to: 'none'
-version: 0.0.0
-# homepage: https://www.example.com
-
+name: nostr_dart
+version: 0.1.0
+description: A Nostr client library written in Dart
+homepage: https://github.com/Satswalker/nostr_dart
+repository: https://github.com/Satswalker/nostr_dart
+issue_tracker: https://github.com/Satswalker/nostr_dart/issues
 environment:
   sdk: '>=2.17.6 <3.0.0'
-
-# dependencies:
-#   path: ^1.8.0
-
 dev_dependencies:
   lints: ^2.0.0
   test: ^1.16.0

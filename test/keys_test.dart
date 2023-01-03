@@ -1,4 +1,4 @@
-import 'package:nostr/src/keys.dart';
+import 'package:nostr_dart/src/keys.dart';
 import 'package:test/test.dart';
 import 'package:string_validator/string_validator.dart' as hex_string;
 import '../test/constants.dart';

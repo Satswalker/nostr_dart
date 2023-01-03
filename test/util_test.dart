@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:nostr/src/util.dart';
+import 'package:nostr_dart/src/util.dart';
 import 'package:string_validator/string_validator.dart' as string;
 
 void main() {

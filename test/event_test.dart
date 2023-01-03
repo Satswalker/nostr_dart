@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:clock/clock.dart';
-import 'package:nostr/src/event.dart';
+import 'package:nostr_dart/nostr.dart';
 import 'package:test/test.dart';
 import 'package:bip340/bip340.dart' as schnorr;
 import '../test/constants.dart';

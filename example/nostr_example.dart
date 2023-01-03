@@ -1,4 +1,4 @@
-import 'package:nostr/nostr.dart';
+import 'package:nostr_dart/nostr.dart';
 
 void main() async {
   // Generate a new private key
