@@ -81,7 +81,7 @@ class Nostr {
   }
 
   Future<void> addRelay(String url) async {
-    final relay = Relay.init(url);
+    final relay = Relay(url);
 
     relay.listen((relayMessage) {
       _parseRelayMessage(relayMessage);

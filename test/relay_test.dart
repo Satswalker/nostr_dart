@@ -20,7 +20,7 @@ void main() {
       });
 
       // Client
-      final relay = Relay.init('ws://localhost:${server.port}');
+      final relay = Relay('ws://localhost:${server.port}');
       relay.listen(expectAsync1((messageReceived) {
         expect(messageReceived, equals(messageSent));
         messageSent = 'Tock';
@@ -57,7 +57,7 @@ void main() {
       }));
 
       // Client side
-      final relay = Relay.init('ws://localhost:${server.port}');
+      final relay = Relay('ws://localhost:${server.port}');
       await relay.connect();
       relay.listen((message) {});
       final subscription = Subscription.init({
@@ -88,7 +88,7 @@ void main() {
       }));
 
       // Client side
-      final relay = Relay.init('ws://localhost:${server.port}');
+      final relay = Relay('ws://localhost:${server.port}');
       await relay.connect();
       relay.listen((message) {});
       relay.unsubscribe(mockSubId);
@@ -115,7 +115,7 @@ void main() {
           TestConstants.emptyTags,
           TestConstants.content);
       event.sign(TestConstants.privateKey);
-      final relay = Relay.init('ws://localhost:${server.port}');
+      final relay = Relay('ws://localhost:${server.port}');
       await relay.connect();
       relay.post(event);
     });

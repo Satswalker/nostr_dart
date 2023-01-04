@@ -6,14 +6,19 @@ import 'event.dart';
 import 'subscription.dart';
 
 class Relay {
-  WebSocketHandler _ws;
+  final String _url;
+  late WebSocketHandler _ws;
 
-  Relay._({required WebSocketHandler websocket}) : _ws = websocket;
-
-  factory Relay.init(String url) {
-    final ws = WebSocketHandler(url);
-    return Relay._(websocket: ws);
+  Relay(String url) : _url = url {
+    _ws = WebSocketHandler(_url);
   }
+
+  // Relay._({required WebSocketHandler websocket}) : _ws = websocket;
+
+  // factory Relay.init(String url) {
+  //   final ws = WebSocketHandler(url);
+  //   return Relay._(websocket: ws);
+  // }
 
   void listen(Function callback) {
     _ws.addListener(callback);
