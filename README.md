@@ -5,7 +5,7 @@ A Nostr client library written in Dart.
 Use this library in your Dart/Flutter app to:
 
 - Connect to Nostr relays.
-- Publish `set_metadata`, `text_note` and `recommend_server` events to connected relays.
+- Publish `set_metadata`, `text_note`, `recommend_server` and `contact_list` events to connected relays.
 - Request events and subscribe to updates.
 
 Supported Nostr Implementation Possibilities:
