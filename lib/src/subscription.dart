@@ -1,4 +1,4 @@
-import './util.dart';
+import 'util.dart';
 
 class Subscription {
   final String id;

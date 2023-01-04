@@ -8,7 +8,13 @@ Use this library in your Dart/Flutter app to:
 - Publish `set_metadata`, `text_note` and `recommend_server` events to connected relays.
 - Request events and subscribe to updates.
 
-Currently implements [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md), [NIP-13](https://github.com/nostr-protocol/nips/blob/master/13.md),  [NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md) and [NIP-20](https://github.com/nostr-protocol/nips/blob/master/20.md)
+Supported Nostr Implementation Possibilities:
+
+- [NIP-01: Basic protocol flow description](https://github.com/nostr-protocol/nips/blob/master/01.md)
+- [NIP-02: Contact List and Petnames](https://github.com/nostr-protocol/nips/blob/master/02.md)
+- [NIP-13: Proof of Work](https://github.com/nostr-protocol/nips/blob/master/13.md)
+- [NIP-15: End of Stored Events Notice](https://github.com/nostr-protocol/nips/blob/master/15.md)
+- [NIP-20: Command Results](https://github.com/nostr-protocol/nips/blob/master/20.md)
 
 ## Getting started
 
@@ -65,6 +71,15 @@ Publish server recommendation:
 
 ```dart
 final result = await nostr.recommendServer([relay url]);
+```
+
+Publish a contact list:
+
+```dart
+final contacts = ContactList();
+final contact = Contact.init(publicKey: [public key], url: [relay url], petname: [petname]);
+contacts.add(contact);
+final result = await nostr.sendContactList(contacts);
 ```
 
 Remove an existing subscription:

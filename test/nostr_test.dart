@@ -385,7 +385,7 @@ void main() async {
 
     test("raises an exception if the private key hasn't been set", () {
       final nostr = Nostr.init();
-      expect(() => nostr.sendTextNote('Hello World!'), throwsStateError);
+      expect(() => nostr.sendTextNote('Hello World!'), throwsArgumentError);
     });
   });
 
@@ -433,17 +433,16 @@ void main() async {
 
     test("raises an exception if the private key hasn't been set", () {
       final nostr = Nostr.init();
-      expect(() => nostr.setMetaData(name: 'Satswalker'), throwsStateError);
+      expect(() => nostr.setMetaData(name: 'Satswalker'), throwsArgumentError);
     });
   });
 
   group('recommendServer:', () {
     test('sends a valid recommend_server event', () async {
       const String url = 'wss://nostr.fmt.wiz.biz';
-      const String expectedMessageType = 'EVENT';
 
       final relay = await fakeRelay(onData: (message) {
-        expect(message[0], expectedMessageType);
+        expect(message[0], "EVENT");
         final event = Event.fromJson(message[1]);
         expect(event.kind, equals(EventKind.recommendServer));
         expect(event.content, equals(url));
@@ -471,7 +470,46 @@ void main() async {
     test("raises an exception if the private key hasn't been set", () {
       final nostr = Nostr.init();
       expect(() => nostr.recommendServer('wss//nostr.fmt.wiz.biz'),
-          throwsStateError);
+          throwsArgumentError);
+    });
+  });
+
+  group('sendContactList:', () {
+    test('sends a valid contact list event', () async {
+      const tags = [
+        [
+          "p",
+          "253d92d92ab577f616797b3660f5b0d0f5a4ecd77a057891fea798c16b2abdce",
+          "",
+          ""
+        ]
+      ];
+
+      final relay = await fakeRelay(onData: (message) {
+        expect(message[0], "EVENT");
+        final event = Event.fromJson(message[1]);
+        expect(event.kind, equals(EventKind.contactList));
+        expect(event.tags, equals(tags));
+        expect(event.content, equals(""));
+      });
+
+      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      await nostr.addRelay('ws://localhost:${relay.port}');
+      final contacts = ContactList.fromJson(tags);
+      await nostr.sendContactList(contacts);
+    });
+
+    test("raises an exception if the private key hasn't been set", () {
+      final nostr = Nostr.init();
+      final contacts = ContactList.fromJson([
+        [
+          "p",
+          "253d92d92ab577f616797b3660f5b0d0f5a4ecd77a057891fea798c16b2abdce",
+          "",
+          ""
+        ]
+      ]);
+      expect(() => nostr.sendContactList(contacts), throwsArgumentError);
     });
   });
 }

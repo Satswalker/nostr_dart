@@ -1,11 +1,29 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:collection';
-import './relay.dart';
-import './event.dart';
-import './subscription.dart';
-import './keys.dart';
-import './command_result.dart';
+import 'relay.dart';
+import 'event.dart';
+import 'subscription.dart';
+import 'keys.dart';
+import 'contact_list.dart';
+
+class CommandResult {
+  final List<dynamic> _result;
+  final String id;
+  final bool success;
+  final String message;
+
+  CommandResult(List<dynamic> result)
+      : _result = result,
+        id = result[1],
+        success = result[2],
+        message = result[3];
+
+  @override
+  String toString() {
+    return _result.toString();
+  }
+}
 
 class Nostr {
   Nostr._({privateKey = '', publicKey = '', powDifficulty = 0})
@@ -89,15 +107,8 @@ class Nostr {
 
   Future<CommandResult> sendTextNote(String textNote,
       [List<dynamic> tags = const []]) {
-    if (_privateKey.isEmpty) {
-      throw StateError("Private key is missing. Message can't be signed.");
-    } else {
-      Event event =
-          Event.compose(_publicKey, EventKind.textNote, tags, textNote);
-      event.doProofOfWork(_powDifficulty);
-      event.sign(_privateKey);
-      return _sendEvent(event);
-    }
+    Event event = Event.compose(_publicKey, EventKind.textNote, tags, textNote);
+    return _sendEvent(event);
   }
 
   Future<CommandResult> setMetaData(
@@ -112,33 +123,33 @@ class Nostr {
     if (picture != '') {
       metaData['picture'] = picture;
     }
-    if (_privateKey.isEmpty) {
-      throw StateError("Private key is missing. Message can't be signed.");
-    } else if (metaData.isEmpty) {
+    if (metaData.isEmpty) {
       throw ArgumentError("No metadata provided");
+    }
+
+    final jsonMetaData = jsonEncode(metaData);
+    final event =
+        Event.compose(_publicKey, EventKind.setMetaData, [], jsonMetaData);
+    return _sendEvent(event);
+  }
+
+  Future<CommandResult> recommendServer(String url) {
+    if (!url.contains(RegExp(
+        r'^(wss?:\/\/)([0-9]{1,3}(?:\.[0-9]{1,3}){3}|[^:]+):?([0-9]{1,5})?$'))) {
+      throw ArgumentError('Not a valid websocket address', 'url');
+    } else if (url.endsWith('.onion')) {
+      throw ArgumentError('Tor addresses are not supported', 'url');
     } else {
-      final jsonMetaData = jsonEncode(metaData);
       final event =
-          Event.compose(_publicKey, EventKind.setMetaData, [], jsonMetaData);
+          Event.compose(_publicKey, EventKind.recommendServer, [], url);
       return _sendEvent(event);
     }
   }
 
-  Future<CommandResult> recommendServer(String url) {
-    if (_privateKey.isEmpty) {
-      throw StateError("Private key is missing. Message can't be signed.");
-    } else {
-      if (!url.contains(RegExp(
-          r'^(wss?:\/\/)([0-9]{1,3}(?:\.[0-9]{1,3}){3}|[^:]+):?([0-9]{1,5})?$'))) {
-        throw ArgumentError('Not a valid websocket address', 'url');
-      } else if (url.endsWith('.onion')) {
-        throw ArgumentError('Tor addresses are not supported', 'url');
-      } else {
-        final event =
-            Event.compose(_publicKey, EventKind.recommendServer, [], url);
-        return _sendEvent(event);
-      }
-    }
+  Future<CommandResult> sendContactList(ContactList contacts) {
+    final tags = contacts.toJson();
+    final event = Event.compose(_publicKey, EventKind.contactList, tags, "");
+    return _sendEvent(event);
   }
 
   Future<String> subscribe(Map<String, dynamic> filters,
@@ -171,6 +182,9 @@ class Nostr {
   }
 
   Future<CommandResult> _sendEvent(Event event) {
+    if (_privateKey.isEmpty) {
+      throw StateError("Private key is missing. Message can't be signed.");
+    }
     event.doProofOfWork(_powDifficulty);
     event.sign(_privateKey);
     final completer = Completer<CommandResult>();
@@ -201,8 +215,8 @@ class Nostr {
         break;
       case 'OK':
         if (_pendingCommandResults.isNotEmpty) {
-          final commandResult = CommandResult.parse(json);
-          _pendingCommandResults.removeFirst().complete(commandResult);
+          final result = CommandResult(json);
+          _pendingCommandResults.removeFirst().complete(result);
         }
         break;
       case 'EOSE':

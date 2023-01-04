@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:web_socket_channel/io.dart';
-import './event.dart';
-import './subscription.dart';
+import 'event.dart';
+import 'subscription.dart';
 
 class Relay {
   WebSocketHandler _ws;

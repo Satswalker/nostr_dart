@@ -1,6 +1,6 @@
 import 'package:bip340/bip340.dart' as schnorr;
 import 'package:string_validator/string_validator.dart';
-import './util.dart';
+import 'util.dart';
 
 String generatePrivateKey() => getRandomHexString();
 
