@@ -84,6 +84,13 @@ contacts.add(contact);
 final result = await nostr.sendContactList(contacts);
 ```
 
+Publish an arbitrary event:
+
+```dart
+final event = Event(publicKey, 1, [], "A beautifully handcrafted event");
+await nostr.sendEvent(event);
+```
+
 Remove an existing subscription:
 
 ```dart
