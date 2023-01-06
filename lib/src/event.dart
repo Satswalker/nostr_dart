@@ -26,8 +26,9 @@ class Event {
     if (!keyIsValid(pubKey)) {
       throw ArgumentError.value(pubKey, 'pubKey', 'Invalid key');
     }
-    createdAt = _secondsSinceEpoch();
-    id = _getId(pubKey, createdAt, kind, tags, content);
+    var now = _secondsSinceEpoch();
+    createdAt = now;
+    id = _getId(pubKey, now, kind, tags, content);
   }
 
   Event._(this.id, this.pubKey, this.createdAt, this.kind, this.tags,
