@@ -2,17 +2,17 @@ import 'package:test/test.dart';
 import 'package:nostr_dart/src/contact_list.dart';
 
 void main() {
-  final alice = Contact.init(
+  final alice = Contact(
       publicKey:
           "253d92d92ab577f616797b3660f5b0d0f5a4ecd77a057891fea798c16b2abdce",
       url: "wss://alicerelay.com/",
       petname: "alice");
-  final bob = Contact.init(
+  final bob = Contact(
       publicKey:
           "5b2e69d67a1e8e6df848bc9680bf4ecd6ec33c79121aea97112cff1bad1a4169",
       url: "wss://bobrelay.com/nostr",
       petname: "bob");
-  final carol = Contact.init(
+  final carol = Contact(
       publicKey:
           "18d85302b8195fec72f2c11efe5fc8ea22ed0f6dfc59ae5286a2cb29aed1664d",
       url: "ws://carolrelay.com/ws",
@@ -69,8 +69,8 @@ void main() {
     test('can update an existing contact', () {
       final contactList = ContactList();
       contactList.add(alice);
-      final newAlice = Contact.init(
-          publicKey: alice.publicKey, url: alice.url, petname: "ally");
+      final newAlice =
+          Contact(publicKey: alice.publicKey, url: alice.url, petname: "ally");
       contactList.add(newAlice);
       final contact = contactList.get(alice.publicKey);
       expect(contact.petname, equals("ally"));

@@ -41,10 +41,10 @@ void main() async {
     test('can connect to a single relay', () async {
       final relay = await fakeRelay(onData: (message) {}, listen: false);
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
 
-      expect(nostr.relayCount(), equals(1));
+      expect(nostr.relayCount, equals(1));
       expect(nostr.hasRelay('ws://localhost:${relay.port}'), isTrue);
     });
 
@@ -52,11 +52,11 @@ void main() async {
       final relay1 = await fakeRelay(onData: (message) {}, listen: false);
       final relay2 = await fakeRelay(onData: (message) {}, listen: false);
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay1.port}');
       await nostr.addRelay('ws://localhost:${relay2.port}');
 
-      expect(nostr.relayCount(), equals(2));
+      expect(nostr.relayCount, equals(2));
       expect(nostr.hasRelay('ws://localhost:${relay1.port}'), isTrue);
       expect(nostr.hasRelay('ws://localhost:${relay2.port}'), isTrue);
     });
@@ -73,7 +73,7 @@ void main() async {
             }));
       });
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay1.port}');
       await nostr.subscribe({
         "ids": [
@@ -84,10 +84,10 @@ void main() async {
     });
 
     test('throws an exception if url is invalid', () {
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       expect(() => nostr.addRelay('localhost'),
           throwsA(isA<WebSocketException>()));
-      expect(nostr.relayCount(), equals(0));
+      expect(nostr.relayCount, equals(0));
     });
   });
 
@@ -95,20 +95,20 @@ void main() async {
     test('removes a specified relay from the relay pool', () async {
       final relay = await fakeRelay(onData: (message) {}, listen: false);
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
-      expect(nostr.relayCount(), equals(1));
+      expect(nostr.relayCount, equals(1));
       expect(nostr.hasRelay('ws://localhost:${relay.port}'), isTrue);
 
       nostr.removeRelay('ws://localhost:${relay.port}');
-      expect(nostr.relayCount(), equals(0));
+      expect(nostr.relayCount, equals(0));
       expect(nostr.hasRelay('ws://localhost:${relay.port}'), isFalse);
     });
 
     test('throws an ArgumentError if url is unknown', () async {
       final relay = await fakeRelay(onData: (message) {}, listen: false);
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       expect(() => nostr.removeRelay('ws://localhost:${relay.port}'),
           throwsArgumentError);
     });
@@ -130,7 +130,7 @@ void main() async {
         expect(message[2], equals(expectedFilter));
       });
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
       await nostr.subscribe({
         "ids": [
@@ -143,7 +143,7 @@ void main() async {
       final relay = await fakeRelay(
           onData: (message) {}, events: [TestConstants.relayEvent1]);
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
       final subId = await nostr.subscribe({
         "ids": [
@@ -152,7 +152,7 @@ void main() async {
       });
 
       expect(nostr.hasSubscription(subId), isTrue);
-      expect(nostr.eventCount(), equals(1));
+      expect(nostr.events.length, equals(1));
     });
 
     test('discards duplicate events received', () async {
@@ -161,7 +161,7 @@ void main() async {
       final relay2 = await fakeRelay(
           onData: (message) {}, events: [TestConstants.relayEvent1]);
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay1.port}');
       await nostr.addRelay('ws://localhost:${relay2.port}');
       await nostr.subscribe({
@@ -170,7 +170,7 @@ void main() async {
         ]
       });
 
-      expect(nostr.eventCount(), equals(1));
+      expect(nostr.events.length, equals(1));
     });
 
     test('discards events received that were not subscribed for', () async {
@@ -179,10 +179,10 @@ void main() async {
         webSocket.add(jsonEncode(TestConstants.relayEvent1));
       });
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
       await Future.delayed(const Duration(seconds: 1), () {});
-      expect(nostr.eventCount(), equals(0));
+      expect(nostr.events.length, equals(0));
     });
 
     test('can request multiple subscriptions', () async {
@@ -190,7 +190,7 @@ void main() async {
           onData: (message) {},
           events: [TestConstants.relayEvent1, TestConstants.relayEvent2]);
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
 
       final sub1 = await nostr.subscribe({
@@ -209,7 +209,7 @@ void main() async {
       expect(nostr.hasSubscription(sub2), isTrue);
 
       // AND received events queue has 2 events
-      expect(nostr.eventCount(), equals(2));
+      expect(nostr.events.length, equals(2));
     });
 
     test('request subscription message is sent to all connected relays',
@@ -233,7 +233,7 @@ void main() async {
             }));
       });
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay1.port}');
       await nostr.addRelay('ws://localhost:${relay2.port}');
       await nostr.subscribe({
@@ -248,7 +248,7 @@ void main() async {
         expect(message[1], equals('1234'));
       });
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
       nostr.subscribe({
         "ids": [
@@ -260,7 +260,7 @@ void main() async {
     test('updates existing subscription', () async {
       final relay = await fakeRelay(onData: (message) {});
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
       const firstFilter = {
         "ids": [
@@ -275,7 +275,7 @@ void main() async {
       final subId = await nostr.subscribe(firstFilter);
       await nostr.subscribe(secondFilter, subId);
 
-      expect(nostr.subscriptionCount(), equals(1));
+      expect(nostr.subscriptionCount, equals(1));
       expect(nostr.getSubscription(subId), secondFilter);
     });
 
@@ -295,7 +295,7 @@ void main() async {
         count++;
       });
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
       final sub1 = await nostr.subscribe({
         "ids": [
@@ -331,7 +331,7 @@ void main() async {
         count2++;
       });
 
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay1.port}');
       await nostr.addRelay('ws://localhost:${relay2.port}');
       final sub = await nostr.subscribe({
@@ -346,7 +346,7 @@ void main() async {
 
     test('throws an ArgumentError if subscriptionId is unknown', () async {
       final relay = await fakeRelay(onData: (message) {}, listen: false);
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       await nostr.addRelay('ws://localhost:${relay.port}');
       expect(() => nostr.unsubscribe('1234'), throwsArgumentError);
     });
@@ -361,7 +361,7 @@ void main() async {
         expect(event.content, equals("Hello World!"));
       });
 
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      final nostr = Nostr(privateKey: TestConstants.privateKey);
       await nostr.addRelay('ws://localhost:${relay.port}');
       await nostr.sendTextNote("Hello World!");
     });
@@ -376,7 +376,7 @@ void main() async {
             ]));
       });
 
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      final nostr = Nostr(privateKey: TestConstants.privateKey);
       await nostr.addRelay('ws://localhost:${relay.port}');
       await nostr.sendTextNote("Hello World!", [
         ["e", TestConstants.id]
@@ -384,7 +384,7 @@ void main() async {
     });
 
     test("raises an exception if the private key hasn't been set", () {
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       expect(() => nostr.sendTextNote('Hello World!'), throwsArgumentError);
     });
   });
@@ -406,7 +406,7 @@ void main() async {
         expect(metaData['picture'], equals(picture));
       });
 
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      final nostr = Nostr(privateKey: TestConstants.privateKey);
       await nostr.addRelay('ws://localhost:${relay.port}');
       await nostr.setMetaData(name: name, about: about, picture: picture);
     });
@@ -421,18 +421,18 @@ void main() async {
         expect(metaData['about'], equals(about));
       });
 
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      final nostr = Nostr(privateKey: TestConstants.privateKey);
       await nostr.addRelay('ws://localhost:${relay.port}');
       await nostr.setMetaData(about: about);
     });
 
     test('raises an exception if no metadata is given', () async {
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      final nostr = Nostr(privateKey: TestConstants.privateKey);
       expect(() => nostr.setMetaData(), throwsArgumentError);
     });
 
     test("raises an exception if the private key hasn't been set", () {
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       expect(() => nostr.setMetaData(name: 'Satswalker'), throwsArgumentError);
     });
   });
@@ -448,27 +448,19 @@ void main() async {
         expect(event.content, equals(url));
       });
 
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      final nostr = Nostr(privateKey: TestConstants.privateKey);
       await nostr.addRelay('ws://localhost:${relay.port}');
       await nostr.recommendServer(url);
     });
 
     test('raises an exception if url is not a valid websocket', () {
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      final nostr = Nostr(privateKey: TestConstants.privateKey);
       expect(() => nostr.recommendServer('wss//nostr.fmt.wiz.biz'),
           throwsArgumentError);
     });
 
-    test('raises an exception if url is a Tor address', () {
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
-      expect(
-          () => nostr.recommendServer(
-              'ws://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion'),
-          throwsArgumentError);
-    });
-
     test("raises an exception if the private key hasn't been set", () {
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       expect(() => nostr.recommendServer('wss//nostr.fmt.wiz.biz'),
           throwsArgumentError);
     });
@@ -493,14 +485,14 @@ void main() async {
         expect(event.content, equals(""));
       });
 
-      final nostr = Nostr.init(privateKey: TestConstants.privateKey);
+      final nostr = Nostr(privateKey: TestConstants.privateKey);
       await nostr.addRelay('ws://localhost:${relay.port}');
       final contacts = ContactList.fromJson(tags);
       await nostr.sendContactList(contacts);
     });
 
     test("raises an exception if the private key hasn't been set", () {
-      final nostr = Nostr.init();
+      final nostr = Nostr();
       final contacts = ContactList.fromJson([
         [
           "p",

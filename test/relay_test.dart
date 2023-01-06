@@ -60,7 +60,7 @@ void main() {
       final relay = Relay('ws://localhost:${server.port}');
       await relay.connect();
       relay.listen((message) {});
-      final subscription = Subscription.init({
+      final subscription = Subscription({
         "ids": [
           "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
         ]
@@ -109,11 +109,8 @@ void main() {
       }));
 
       // Client side
-      final event = Event.compose(
-          TestConstants.publicKey,
-          TestConstants.kindTextNote,
-          TestConstants.emptyTags,
-          TestConstants.content);
+      final event = Event(TestConstants.publicKey, TestConstants.kindTextNote,
+          TestConstants.emptyTags, TestConstants.content);
       event.sign(TestConstants.privateKey);
       final relay = Relay('ws://localhost:${server.port}');
       await relay.connect();

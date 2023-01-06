@@ -1,6 +1,6 @@
 name: nostr_dart
-version: 0.2.0
-description: A Nostr client library written in Dart
+version: 0.3.0
+description: A Nostr protocol client API for building censorship-resistant social network applications in Dart/Flutter.
 homepage: https://github.com/Satswalker/nostr_dart
 repository: https://github.com/Satswalker/nostr_dart
 issue_tracker: https://github.com/Satswalker/nostr_dart/issues

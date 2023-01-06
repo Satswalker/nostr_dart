@@ -14,7 +14,7 @@ void main() {
       final event = Event.fromJson(parsedJson);
 
       expect(event.id, TestConstants.id);
-      expect(event.pubkey, TestConstants.publicKey);
+      expect(event.pubKey, TestConstants.publicKey);
       expect(event.createdAt, TestConstants.timestamp);
       expect(event.kind, 1);
       expect(event.tags, hasLength(0));
@@ -70,13 +70,13 @@ void main() {
       // Clock stubbed to get a deterministic "id"
       final event = withClock(
         Clock.fixed(DateTime(2022)),
-        () => Event.compose(TestConstants.publicKey, TestConstants.kindTextNote,
+        () => Event(TestConstants.publicKey, TestConstants.kindTextNote,
             TestConstants.emptyTags, TestConstants.content),
       );
 
       // "id" is a SHA256 hash of event data
       expect(event.id, expectedId);
-      expect(event.pubkey, TestConstants.publicKey);
+      expect(event.pubKey, TestConstants.publicKey);
       // Only need to check that "createdAt" is a number. Timestamp correctness
       // is verified in a subsequent test.
       expect(event.createdAt, isNotNaN);
@@ -88,11 +88,8 @@ void main() {
     test('"createdAt" is a Unix timestamp of when the object was created', () {
       final now = clock.now();
       final expectedTimestamp = now.millisecondsSinceEpoch ~/ 1000;
-      final event = Event.compose(
-          TestConstants.publicKey,
-          TestConstants.kindTextNote,
-          TestConstants.emptyTags,
-          TestConstants.content);
+      final event = Event(TestConstants.publicKey, TestConstants.kindTextNote,
+          TestConstants.emptyTags, TestConstants.content);
 
       // 1s tolerance to avoid nuisance failures
       expect(event.createdAt, closeTo(expectedTimestamp, 1));
@@ -101,20 +98,14 @@ void main() {
     test('Raises an exception if the public key parameter is invalid', () {
       // Public key isn't a hexadecimal string
       expect(
-          () => Event.compose(
-              TestConstants.keyNotHex,
-              TestConstants.kindTextNote,
-              TestConstants.emptyTags,
-              TestConstants.content),
+          () => Event(TestConstants.keyNotHex, TestConstants.kindTextNote,
+              TestConstants.emptyTags, TestConstants.content),
           throwsArgumentError);
 
       // Public key isn't the correct length
       expect(
-          () => Event.compose(
-              TestConstants.keyWrongLength,
-              TestConstants.kindTextNote,
-              TestConstants.emptyTags,
-              TestConstants.content),
+          () => Event(TestConstants.keyWrongLength, TestConstants.kindTextNote,
+              TestConstants.emptyTags, TestConstants.content),
           throwsArgumentError);
     });
   });
@@ -124,7 +115,7 @@ void main() {
       // Clock stubbed to get a deterministic "id"
       final event = withClock(
         Clock.fixed(DateTime(2022)),
-        () => Event.compose(TestConstants.publicKey, TestConstants.kindTextNote,
+        () => Event(TestConstants.publicKey, TestConstants.kindTextNote,
             TestConstants.emptyTags, TestConstants.content),
       );
       event.sign(TestConstants.privateKey);
@@ -134,11 +125,8 @@ void main() {
     });
 
     test('raises an exception if the private key is not valid', () {
-      final event = Event.compose(
-          TestConstants.publicKey,
-          TestConstants.kindTextNote,
-          TestConstants.emptyTags,
-          TestConstants.content);
+      final event = Event(TestConstants.publicKey, TestConstants.kindTextNote,
+          TestConstants.emptyTags, TestConstants.content);
       event.sign(TestConstants.idNotHex);
     });
   });

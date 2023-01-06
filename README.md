@@ -32,7 +32,7 @@ Initialise `nostr_dart`:
 ```dart
 import 'package:nostr_dart/nostr_dart.dart'
 
-final nostr = Nostr.init(privateKey: [private key], powDifficulty: [difficulty]);
+final nostr = Nostr(privateKey: [private key], powDifficulty: [difficulty]);
 ```
 
 Add a relay:
@@ -77,7 +77,7 @@ Publish a contact list:
 
 ```dart
 final contacts = ContactList();
-final contact = Contact.init(publicKey: [public key], url: [relay url], petname: [petname]);
+final contact = Contact(publicKey: [public key], url: [relay url], petname: [petname]);
 contacts.add(contact);
 final result = await nostr.sendContactList(contacts);
 ```

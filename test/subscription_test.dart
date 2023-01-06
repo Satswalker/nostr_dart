@@ -5,7 +5,7 @@ import 'package:string_validator/string_validator.dart' as hex_string;
 void main() {
   group('Subscription():', () {
     test('Subscription ID is a 32-byte hexadecimal string', () {
-      final sub = Subscription.init({
+      final sub = Subscription({
         "ids": [
           "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
         ]
@@ -15,12 +15,12 @@ void main() {
     });
 
     test('Subscription ID is randomly generated', () {
-      final sub1 = Subscription.init({
+      final sub1 = Subscription({
         "ids": [
           "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
         ]
       });
-      final sub2 = Subscription.init({
+      final sub2 = Subscription({
         "ids": [
           "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
         ]
@@ -29,7 +29,7 @@ void main() {
     });
 
     test('Subscription stores the filters parameter', () {
-      final sub = Subscription.init({
+      final sub = Subscription({
         "ids": [
           "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
         ]

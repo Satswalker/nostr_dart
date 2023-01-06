@@ -7,7 +7,7 @@ void main() async {
   print('Private Key: $privateKey\nPublic Key: $publicKey\n');
 
   // The client API is provided by the Nostr class.
-  final nostr = Nostr.init(privateKey: privateKey, powDifficulty: 16);
+  final nostr = Nostr(privateKey: privateKey, powDifficulty: 16);
 
   // Connect to a Nostr relay. This is an asynchronous operation so
   // consider using the `await` keyword.
@@ -38,13 +38,17 @@ void main() async {
 
   // Publish a contact list
   final contacts = ContactList();
-  final alice = Contact.init(
+  final alice = Contact(
       publicKey:
           "253d92d92ab577f616797b3660f5b0d0f5a4ecd77a057891fea798c16b2abdce",
       url: "wss://alicerelay.com/",
       petname: "alice");
   contacts.add(alice);
   await nostr.sendContactList(contacts);
+
+  // Publish an arbitrary event
+  final event = Event(publicKey, 1, [], "A beautifully handcrafted event");
+  await nostr.sendEvent(event);
 
   // Remove subscription and disconnect from the relay
   nostr.unsubscribe(subId);

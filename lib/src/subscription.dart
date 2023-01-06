@@ -1,16 +1,10 @@
 import 'util.dart';
 
 class Subscription {
-  final String id;
+  final String _id;
   Map<String, dynamic> filters;
 
-  Subscription._({required this.id, required this.filters});
+  String get id => _id;
 
-  factory Subscription.init(Map<String, dynamic> filters, {String id = ''}) {
-    if (id.isEmpty) {
-      id = getRandomHexString();
-    }
-
-    return Subscription._(id: id, filters: filters);
-  }
+  Subscription(this.filters, [String? id]) : _id = id ?? getRandomHexString();
 }

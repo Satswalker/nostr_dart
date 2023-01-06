@@ -13,13 +13,6 @@ class Relay {
     _ws = WebSocketHandler(_url);
   }
 
-  // Relay._({required WebSocketHandler websocket}) : _ws = websocket;
-
-  // factory Relay.init(String url) {
-  //   final ws = WebSocketHandler(url);
-  //   return Relay._(websocket: ws);
-  // }
-
   void listen(Function callback) {
     _ws.addListener(callback);
   }

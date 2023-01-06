@@ -8,66 +8,71 @@ import 'package:string_validator/string_validator.dart';
 import 'keys.dart';
 import 'util.dart';
 
+/// A Nostr event
+///
+/// For more details about Nostr events refer to [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 class Event {
-  Event._(
-      {required this.id,
-      required this.pubkey,
-      required this.createdAt,
-      required this.kind,
-      required this.content,
-      required this.tags,
-      this.sig = ''});
+  /// Creates a new Nostr event.
+  ///
+  /// [pubKey] is the author's public key.
+  /// [kind] is the event kind.
+  /// [tags] is a JSON object of event tags.
+  /// [content] is an arbitrary string.
+  ///
+  /// Nostr event `id` and `created_at` fields are calculated automatically.
+  ///
+  /// An [ArgumentError] is thrown if [pubKey] is invalid.
+  Event(this.pubKey, this.kind, this.tags, this.content) {
+    if (!keyIsValid(pubKey)) {
+      throw ArgumentError.value(pubKey, 'pubKey', 'Invalid key');
+    }
+    createdAt = _secondsSinceEpoch();
+    id = _getId(pubKey, createdAt, kind, tags, content);
+  }
 
-  String id;
-  final String pubkey;
-  final int createdAt;
-  final int kind;
-  List<dynamic> tags;
-  final String content;
-  String sig;
+  Event._(this.id, this.pubKey, this.createdAt, this.kind, this.tags,
+      this.content, this.sig);
 
   factory Event.fromJson(Map<String, dynamic> data) {
     final id = data['id'] as String;
-    final pubkey = data['pubkey'] as String;
+    final pubKey = data['pubkey'] as String;
     final createdAt = data['created_at'] as int;
     final kind = data['kind'] as int;
     final tags = data['tags'];
     final content = data['content'] as String;
     final sig = data['sig'] as String;
 
-    _validate(id, pubkey, createdAt, kind, tags, content);
-    _verifySignature(id, pubkey, sig);
+    _validate(id, pubKey, createdAt, kind, tags, content);
+    _verifySignature(id, pubKey, sig);
 
-    return Event._(
-        id: id,
-        pubkey: pubkey,
-        createdAt: createdAt,
-        kind: kind,
-        tags: tags,
-        content: content,
-        sig: sig);
+    return Event._(id, pubKey, createdAt, kind, tags, content, sig);
   }
-  factory Event.compose(
-      String publicKey, int kind, List<dynamic> tags, String content) {
-    if (!keyIsValid(publicKey)) {
-      throw ArgumentError("Invalid key: '$publicKey'", 'publicKey');
-    }
-    final int createdAt = _secondsSinceEpoch();
-    final String id = _getId(publicKey, createdAt, kind, tags, content);
 
-    return Event._(
-        id: id,
-        pubkey: publicKey,
-        createdAt: createdAt,
-        kind: kind,
-        tags: tags,
-        content: content);
-  }
+  /// The event ID is a 32-byte SHA256 hash of the serialised event data.
+  String id = '';
+
+  /// The event author's public key.
+  final String pubKey;
+
+  /// Event creation timestamp in Unix time.
+  late int createdAt;
+
+  /// Event kind identifier (e.g. text_note, set_metadata, etc).
+  final int kind;
+
+  /// A JSON array of event tags.
+  List<dynamic> tags; // Modified by proof-of-work
+
+  /// Event content.
+  final String content;
+
+  /// 64-byte Schnorr signature of [Event.id].
+  String sig = '';
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'pubkey': pubkey,
+      'pubkey': pubKey,
       'created_at': createdAt,
       'kind': kind,
       'tags': tags,
@@ -77,10 +82,10 @@ class Event {
   }
 
   void doProofOfWork(int difficulty) {
-    const int nonceIndex = 1;
     if (difficulty < 0) {
       throw ArgumentError("PoW difficulty can't be negative", 'difficulty');
-    } else if (difficulty > 0) {
+    }
+    if (difficulty > 0) {
       final difficultyInBytes = (difficulty / 8).ceil();
       List<dynamic> result = [];
       for (List<dynamic> tag in tags) {
@@ -90,8 +95,9 @@ class Event {
       tags = result;
       int nonce = 0;
       do {
+        const int nonceIndex = 1;
         tags.last[nonceIndex] = (++nonce).toString();
-        id = _getId(pubkey, createdAt, kind, tags, content);
+        id = _getId(pubKey, createdAt, kind, tags, content);
       } while (_countLeadingZeroBytes(id) < difficultyInBytes);
     }
   }
@@ -122,11 +128,6 @@ class Event {
     final bytes = utf8.encode(jsonData);
     final digest = sha256.convert(bytes);
     return digest.toString();
-  }
-
-  static String _sign(String id, String privateKey) {
-    final String aux = getRandomHexString();
-    return schnorr.sign(privateKey, id, aux);
   }
 
   static void _validate(id, publicKey, createdAt, kind, tags, content) {
