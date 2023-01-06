@@ -7,9 +7,9 @@ name: Dart
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "bug-1-failing-github-workflow" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "bug-1-failing-github-workflow" ]
 
 jobs:
   build:
