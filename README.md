@@ -1,3 +1,5 @@
+[![Dart](https://github.com/Satswalker/nostr_dart/actions/workflows/dart.yml/badge.svg)](https://github.com/Satswalker/nostr_dart/actions/workflows/dart.yml)
+
 A Nostr client library written in Dart.
 
 ## Features
