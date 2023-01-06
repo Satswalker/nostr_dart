@@ -24,7 +24,7 @@ void main() async {
     print('${event.content}\n');
   }
 
-  // Publish a text note and confirm the operation was sucessful
+  // Publish a text note and confirm the operation was successful
   var result = await nostr.sendTextNote('Hello Nostr!');
   if (result.success) {
     print('winning!');
