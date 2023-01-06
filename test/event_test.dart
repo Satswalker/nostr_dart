@@ -69,7 +69,7 @@ void main() {
 
       // Clock stubbed to get a deterministic "id"
       final event = withClock(
-        Clock.fixed(DateTime(2022)),
+        Clock.fixed(DateTime.utc(2021, 12, 31, 11)),
         () => Event(TestConstants.publicKey, TestConstants.kindTextNote,
             TestConstants.emptyTags, TestConstants.content),
       );
