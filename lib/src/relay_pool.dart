@@ -13,7 +13,6 @@ import 'relay.dart';
 class RelayPool {
   final Map<String, Relay> _relays = {};
   final Map<String, Subscription> _subscriptions = {};
-  final Queue<Completer<void>> _pendingResponses = Queue();
 
   /// A list of relay urls currently in the relay pool.
   List<String> get list => _relays.keys.toList();

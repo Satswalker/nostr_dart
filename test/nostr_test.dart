@@ -154,7 +154,7 @@ void main() async {
 
       final nostr = Nostr();
       await nostr.pool.add('ws://localhost:${relay.port}');
-      final subId = nostr.pool.subscribe([
+      nostr.pool.subscribe([
         {
           "ids": [
             "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
