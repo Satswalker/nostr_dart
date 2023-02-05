@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../util.dart';
 
 /// Representation of a Nostr event subscription.
@@ -18,7 +17,7 @@ class Subscription {
     List<dynamic> json = ["REQ", _id];
 
     for (Map<String, dynamic> filter in filters) {
-      json.add(jsonEncode(filter));
+      json.add(filter);
     }
 
     return json;

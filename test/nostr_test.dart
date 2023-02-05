@@ -70,11 +70,11 @@ void main() async {
       final relay2 = await fakeRelay(onData: expectAsync1((message) {
         expect(
             message[2],
-            equals(jsonEncode({
+            equals({
               "ids": [
                 "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
               ]
-            })));
+            }));
       }));
 
       final nostr = Nostr();
@@ -123,29 +123,21 @@ void main() async {
 
   group('subscribe:', () {
     test('sends a valid subscription request', () async {
-      const String expectedType = 'REQ';
-      String expectedSubId = 'sub1';
-      String expectedFilter = jsonEncode({
+      const Map<String, dynamic> filter = {
         "ids": [
           "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
         ]
-      });
+      };
 
-      final relay = await fakeRelay(onData: expectAsync1((message) {
-        expect(message[0], equals(expectedType));
-        expect(message[1], equals(expectedSubId));
-        expect(message[2], equals(expectedFilter));
+      final relay = await fakeRelay(onData: expectAsync1((json) {
+        expect(json[0], equals("REQ"));
+        expect(json[1], equals("sub_1"));
+        expect(json[2], equals(filter));
       }));
 
       final nostr = Nostr();
       await nostr.pool.add('ws://localhost:${relay.port}');
-      nostr.pool.subscribe([
-        {
-          "ids": [
-            "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
-          ]
-        }
-      ], (event) {}, expectedSubId);
+      nostr.pool.subscribe([filter], (event) {}, "sub_1");
     });
 
     test('can request and receive a single event', () async {
@@ -211,20 +203,20 @@ void main() async {
       final relay1 = await fakeRelay(onData: expectAsync1((message) {
         expect(
             message[2],
-            equals(jsonEncode({
+            equals({
               "ids": [
                 "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
               ]
-            })));
+            }));
       }));
       final relay2 = await fakeRelay(onData: expectAsync1((message) {
         expect(
             message[2],
-            equals(jsonEncode({
+            equals({
               "ids": [
                 "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
               ]
-            })));
+            }));
       }));
 
       final nostr = Nostr();
@@ -318,6 +310,22 @@ void main() async {
       expect(ackRelay2, isTrue);
       expect(ackRelay3, isFalse);
     });
+
+    test('Can retrieve an event from a real relay', () async {
+      final nostr = Nostr();
+      await nostr.pool.add('wss://nostr-pub.wellorder.net');
+      nostr.pool.subscribe([
+        {
+          "authors": [
+            "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+          ],
+          "limit": 1
+        }
+      ], (event) {
+        print(event.content);
+      });
+      await Future.delayed(Duration(seconds: 5));
+    }, skip: "Just for debugging. Don't run for CI tests.");
   });
 
   group('unsubscribe:', () {
@@ -464,6 +472,21 @@ void main() async {
       expect(ackRelay2, isTrue);
       expect(ackRelay3, isTrue);
     });
+
+    test('Can send a text note to a real relay', () async {
+      final nostr =
+          Nostr(privateKey: TestConstants.privateKey, powDifficulty: 16);
+      await nostr.pool
+          .add('wss://nostr-pub.wellorder.net', access: WriteAccess.readWrite);
+      final event = nostr.sendTextNote("Hello Nostr!");
+      nostr.pool.subscribe([
+        {
+          "ids": [event.id]
+        }
+      ], expectAsync1((event) {
+        expect(event.content, equals("Hello Nostr"));
+      }));
+    }, skip: "Just for debugging. Don't run for CI tests.");
   });
 
   group('sendMetaData:', () {

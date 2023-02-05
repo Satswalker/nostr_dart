@@ -22,3 +22,7 @@
 - `Nostr.pool.add` allows read/write attributes to be configured for relays with its `access` parameter.
 - Received events are now accessed via a listener callback provided to `Nostr.pool.subscribe`. This allows different subscriptions to route events to different event listeners.
 - `Nostr.sendTextNote`, `Nostr.sendMetaData`, `Nostr.recommendServer`, `Nostr.sendContactList`, `Nostr.pool.subscribe`, are no longer asynchronous operations. `nostr_dart` now maintains an asynchronous job queue for each connected relay to sequence relay communications.
+
+## 0.4.1
+
+- Fixed incorrectly formatted subscription requests.
