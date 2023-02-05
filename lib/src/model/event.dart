@@ -5,8 +5,8 @@ import 'package:clock/clock.dart';
 import 'package:bip340/bip340.dart' as schnorr;
 import 'package:hex/hex.dart';
 import 'package:string_validator/string_validator.dart';
-import 'keys.dart';
-import 'util.dart';
+import '../keys.dart';
+import '../util.dart';
 
 /// A Nostr event
 ///
@@ -69,6 +69,10 @@ class Event {
   /// 64-byte Schnorr signature of [Event.id].
   String sig = '';
 
+  /// Relay that an event was received from
+  String source = '';
+
+  /// Returns the Event object as a JSON object
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -162,7 +166,7 @@ class Event {
 }
 
 class EventKind {
-  static int get setMetaData => 0;
+  static int get metaData => 0;
   static int get textNote => 1;
   static int get recommendServer => 2;
   static int get contactList => 3;

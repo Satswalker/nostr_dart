@@ -1,4 +1,5 @@
 import 'package:nostr_dart/nostr_dart.dart';
+import 'package:nostr_dart/src/relay.dart';
 
 void main() async {
   // Generate a new private key
@@ -12,29 +13,25 @@ void main() async {
   // Connect to a Nostr relay. This is an asynchronous operation so
   // consider using the `await` keyword.
   const relayUrl = 'wss://relay.nostr.info';
-  await nostr.addRelay(relayUrl);
+  await nostr.pool.add(relayUrl, access: WriteAccess.readWrite);
 
   // Retrieve an event
-  final subId = await nostr.subscribe({
-    "ids": ["00002de2e06d9630b58df3bc4f10e27febbc089286b5498bbbcac9baef3dd45a"]
-  });
+  final subId = nostr.pool.subscribe([
+    {
+      "ids": [
+        "00002de2e06d9630b58df3bc4f10e27febbc089286b5498bbbcac9baef3dd45a"
+      ]
+    }
+  ], (event) {});
 
-  // Read received events
-  for (Event event in nostr.events) {
-    print('${event.content}\n');
-  }
-
-  // Publish a text note and confirm the operation was successful
-  var result = await nostr.sendTextNote('Hello Nostr!');
-  if (result.success) {
-    print('winning!');
-  }
+  // Publish a text note
+  nostr.sendTextNote('Hello Nostr!');
 
   // Publish a relay recommendation
-  await nostr.recommendServer('wss://nostr.onsats.org');
+  nostr.recommendServer('wss://nostr.onsats.org');
 
   // Update metadata
-  await nostr.setMetaData(name: "my-name");
+  nostr.sendMetaData(name: "my-name");
 
   // Publish a contact list
   final contacts = ContactList();
@@ -44,13 +41,13 @@ void main() async {
       url: "wss://alicerelay.com/",
       petname: "alice");
   contacts.add(alice);
-  await nostr.sendContactList(contacts);
+  nostr.sendContactList(contacts);
 
   // Publish an arbitrary event
   final event = Event(publicKey, 1, [], "A beautifully handcrafted event");
-  await nostr.sendEvent(event);
+  nostr.sendEvent(event);
 
   // Remove subscription and disconnect from the relay
-  nostr.unsubscribe(subId);
-  nostr.removeRelay(relayUrl);
+  nostr.pool.unsubscribe(subId);
+  nostr.pool.remove(relayUrl);
 }

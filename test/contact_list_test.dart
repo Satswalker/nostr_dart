@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:nostr_dart/src/contact_list.dart';
+import 'package:nostr_dart/src/model/contact_list.dart';
 
 void main() {
   final alice = Contact(

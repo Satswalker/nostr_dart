@@ -1,43 +1,80 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'dart:collection';
+import 'dart:developer';
 import 'package:web_socket_channel/io.dart';
-import 'event.dart';
-import 'subscription.dart';
+import 'package:queue/queue.dart' as job_queue;
+
+enum WriteAccess { readOnly, writeOnly, readWrite }
 
 class Relay {
   final String _url;
+  final WriteAccess access;
   late WebSocketHandler _ws;
+  final _jobRunner = job_queue.Queue();
+  final Queue<Completer<void>> _pendingResponses = Queue();
+  Function? _listener;
 
-  Relay(String url) : _url = url {
-    _ws = WebSocketHandler(_url);
+  Relay(String url, {Function? onDone, this.access = WriteAccess.readOnly})
+      : _url = url {
+    _ws = WebSocketHandler(_url, onDone: onDone);
+    _ws.addListener(_onData);
   }
 
-  void listen(Function callback) {
-    _ws.addListener(callback);
+  String get url => _url;
+
+  bool get isDisconnected => _ws.isDisconnected;
+
+  void listen(Function? callback) {
+    _listener = callback;
   }
 
-  Future<void> connect() async {
-    return await _ws.connect();
+  Future<bool> connect() async {
+    bool result = await _ws.connect();
+    return result;
   }
 
-  void disconnect() {
-    _ws.reset();
+  Future<void> disconnect() async {
+    await _ws.reset();
   }
 
-  void subscribe(Subscription subscription) {
-    final message = json.encode(["REQ", subscription.id, subscription.filters]);
+  void send(String message) {
+    _jobRunner.add(() => _send(message));
+  }
+
+  Future<void> _send(String message) async {
+    final completer = Completer();
+    completer.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        throw TimeoutException("No response from $_url");
+      },
+    ).catchError((err) {
+      log(err.toString());
+      _pendingResponses.removeFirst().complete();
+      disconnect();
+    });
+    _pendingResponses.add(completer);
+    log("Sending to $_url");
     _ws.send(message);
+    await completer.future;
   }
 
-  void unsubscribe(String subscriptionId) {
-    final message = json.encode(["CLOSE", subscriptionId]);
-    _ws.send(message);
-  }
-
-  void post(Event event) {
-    final message = json.encode(["EVENT", event.toJson()]);
-    _ws.send(message);
+  void _onData(String message) {
+    final List<dynamic> json = jsonDecode(message);
+    if (json[0] == 'OK' || json[0] == 'EOSE') {
+      if (_pendingResponses.isNotEmpty) {
+        _pendingResponses.removeFirst().complete();
+      }
+    }
+    if (json[0] == 'NOTICE') {
+      log("$_url: ${json.toString()}");
+    }
+    if (_listener != null) {
+      json.add(_url);
+      _listener!(json);
+    }
   }
 }
 
@@ -46,34 +83,47 @@ class WebSocketHandler {
   IOWebSocketChannel? _channel;
   bool _disconnected = true;
   final List<Function> _listeners = [];
+  final Function? _onDone;
 
-  WebSocketHandler(this._url);
+  WebSocketHandler(this._url, {Function? onDone}) : _onDone = onDone;
 
-  connect() async {
+  bool get isDisconnected => _disconnected;
+
+  Future<bool> connect() async {
     reset();
-    await WebSocket.connect(_url)
-        .timeout(const Duration(seconds: 10))
-        .then((ws) {
-      _channel = IOWebSocketChannel(ws);
-      _disconnected = false;
-      _channel!.stream.listen(_onReceiveMessage, onError: (error) {},
-          onDone: () {
-        _disconnected = true;
+    try {
+      await WebSocket.connect(_url)
+          .timeout(const Duration(seconds: 10))
+          .then((ws) {
+        _channel = IOWebSocketChannel(ws);
+        _disconnected = false;
+        _channel!.stream.listen(_onReceiveMessage, onError: (error) {
+          log("Websocket stream error: $_url");
+        }, onDone: () {
+          _disconnected = true;
+          if (_onDone != null) {
+            _onDone!(_url);
+          }
+        });
       });
-    });
+      return true;
+    } catch (err) {
+      log(err.toString());
+      return false;
+    }
   }
 
-  reset() {
+  Future<void> reset() async {
     if (_channel != null) {
-      _channel!.sink.close();
+      await _channel!.sink.close();
       _disconnected = true;
     }
   }
 
-  send(String message) {
-    if (_disconnected) {
-      connect();
-    }
+  void send(String message) async {
+    // if (_disconnected) {
+    //   await connect();
+    // }
     if (_channel != null && !_disconnected) {
       _channel!.sink.add(message);
     }

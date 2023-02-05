@@ -40,39 +40,31 @@ final nostr = Nostr(privateKey: [private key], powDifficulty: [difficulty]);
 Add a relay:
 
 ```dart
-await nostr.addRelay([relay url]);
+await nostr.pool.add([Relay URL]);
 ```
 
 Retrieve events from connected relays and subscribe to updates:
 
 ```dart
-final subId = await nostr.subscribe([filters], [subscription id])
-```
-
-Read retrieved events:
-
-```dart
-for (Event event in nostr.events) {
-    print('ID: ${event.id}. Content: ${event.content}');
-}
+final subId = nostr.pool.subscribe([List of filters], [onEvent callback], [Subscription ID]);
 ```
 
 Publish a text note:
 
 ```dart
-final result = await nostr.sendTextNote([content], [tags]);
+nostr.sendTextNote([content], [tags]);
 ```
 
 Publish metadata:
 
 ```dart
-final result = await nostr.setMetaData(name: [name], about: [about], picture: [picture url]);
+nostr.sendMetaData(name: [name], about: [about], picture: [picture url]);
 ```
 
 Publish server recommendation:
 
 ```dart
-final result = await nostr.recommendServer([relay url]);
+nostr.recommendServer([Relay URL]);
 ```
 
 Publish a contact list:
@@ -81,24 +73,28 @@ Publish a contact list:
 final contacts = ContactList();
 final contact = Contact(publicKey: [public key], url: [relay url], petname: [petname]);
 contacts.add(contact);
-final result = await nostr.sendContactList(contacts);
+nostr.sendContactList(contacts);
 ```
 
 Publish an arbitrary event:
 
 ```dart
 final event = Event(publicKey, 1, [], "A beautifully handcrafted event");
-await nostr.sendEvent(event);
+nostr.sendEvent(event);
 ```
 
 Remove an existing subscription:
 
 ```dart
-nostr.unsubscribe([subscription id]);
+nostr.pool.unsubscribe([subscription ID]);
 ```
 
 Remove a connected relay:
 
 ```dart
-nostr.removeRelay([relay url]);
+nostr.pool.remove([Relay URL]);
 ```
+
+## Contributing
+
+Pull requests are welcome. Please write tests to cover your new feature.
