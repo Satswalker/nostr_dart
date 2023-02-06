@@ -10,7 +10,7 @@ class Subscription {
   String get id => _id;
 
   Subscription(this.filters, this.onEvent, [String? id])
-      : _id = id ?? getRandomHexString();
+      : _id = id ?? getRandomHexString().substring(0, 16);
 
   /// Returns the subscription as a Nostr subscription request in JSON format
   List<dynamic> toJson() {

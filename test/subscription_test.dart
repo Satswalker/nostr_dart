@@ -4,7 +4,7 @@ import 'package:string_validator/string_validator.dart' as hex_string;
 
 void main() {
   group('Subscription():', () {
-    test('Subscription ID is a 32-byte hexadecimal string', () {
+    test('Subscription ID is an 8-byte hexadecimal string', () {
       final sub = Subscription([
         {
           "ids": [
@@ -12,7 +12,7 @@ void main() {
           ]
         }
       ], (event) {});
-      expect(sub.id.length, equals(64));
+      expect(sub.id.length, equals(16));
       expect(hex_string.isHexadecimal(sub.id), isTrue);
     });
 

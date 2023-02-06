@@ -75,7 +75,9 @@ class RelayPool {
   /// Note that if an error occurs when [jsonMessage] is sent to an individual
   /// relay, for example if a timeout occurs, then the failing relay will be
   /// automatically removed from the pool.
-  void send(List<dynamic> jsonMessage) {
+  Future<void> send(List<dynamic> jsonMessage) async {
+    List<Future<void>> futures = [];
+
     for (Relay relay in _relays.values) {
       if (jsonMessage[0] == "EVENT") {
         if (relay.access == WriteAccess.readOnly) {
@@ -89,12 +91,13 @@ class RelayPool {
       }
       try {
         final message = jsonEncode(jsonMessage);
-        relay.send(message);
+        futures.add(relay.send(message));
       } catch (err) {
         log(err.toString());
         remove(relay.url);
       }
     }
+    await Future.wait(futures);
   }
 
   /// Requests events and subscribes to updates.
@@ -108,7 +111,7 @@ class RelayPool {
   /// may be invoked multiple times for the same event. This is so the client
   /// can determine from which relays any given event has been found.
   /// [id] is the subscription ID to identify the subscription request. If [id]
-  /// not provided the subscription ID will be assigned a random 32-byte
+  /// not provided the subscription ID will be assigned a random 8-byte
   /// hexadecimal string.
   ///
   /// Note that the transmission of the subscription request to connected relays
@@ -117,26 +120,29 @@ class RelayPool {
   /// message has acknowledged by the relay or a timeout occurs. This requires
   /// relays used to support [NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md) and [NIP-20](https://github.com/nostr-protocol/nips/blob/master/20.md).
   ///
-  /// The [String] returned is the subscription's ID. This way, if [id] was not
-  /// provided, the client can determine the randomly assigned subscription ID.
+  /// The returned [Future<String>] returns the subscription ID when the future
+  /// completes. This future is completed when all relays that the subscription
+  /// was sent to have either returned an end-of-stored events notice or thrown
+  /// an error.
   ///
   /// An [ArgumentError] is thrown if [filters] is an empty list.
   ///
   /// Example:
   /// ```dart
-  /// final subId = nostr.subscribe([{
+  /// final subId = await nostr.subscribe([{
   ///  "ids": ["91cf9..4e5ca"]
   /// }]);
   /// ```
-  String subscribe(List<Map<String, dynamic>> filters, Function(Event) onEvent,
-      [String? id]) {
+  Future<String> subscribe(
+      List<Map<String, dynamic>> filters, Function(Event) onEvent,
+      [String? id]) async {
     if (filters.isEmpty) {
       throw ArgumentError("No filters given", "filters");
     }
 
     final Subscription subscription = Subscription(filters, onEvent, id);
     _subscriptions[subscription.id] = subscription;
-    send(subscription.toJson());
+    await send(subscription.toJson());
     return subscription.id;
   }
 

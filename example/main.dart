@@ -16,7 +16,7 @@ void main() async {
   await nostr.pool.add(relayUrl, access: WriteAccess.readWrite);
 
   // Retrieve an event
-  final subId = nostr.pool.subscribe([
+  final subId = await nostr.pool.subscribe([
     {
       "ids": [
         "00002de2e06d9630b58df3bc4f10e27febbc089286b5498bbbcac9baef3dd45a"

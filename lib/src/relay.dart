@@ -39,8 +39,8 @@ class Relay {
     await _ws.reset();
   }
 
-  void send(String message) {
-    _jobRunner.add(() => _send(message));
+  Future<void> send(String message) async {
+    return _jobRunner.add(() => _send(message));
   }
 
   Future<void> _send(String message) async {

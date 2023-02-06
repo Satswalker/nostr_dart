@@ -26,3 +26,8 @@
 ## 0.4.1
 
 - Fixed incorrectly formatted subscription requests.
+
+## 0.5.0
+
+- Shortened the length of randomly assigned Subscription IDs to an 8-byte hexadecimal string. Some relays were rejecting a 32-byte hexadecimal.
+- `Nostr.pool.subscribe` is now an asynchronous operation returning a `Future` that completes when all expected end-of-stored events notices have been received.

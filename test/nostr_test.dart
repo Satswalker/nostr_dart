@@ -168,7 +168,7 @@ void main() async {
       final nostr = Nostr();
       await nostr.pool.add('ws://localhost:${relay.port}');
 
-      final sub1 = nostr.pool.subscribe([
+      final sub1 = await nostr.pool.subscribe([
         {
           "ids": [
             "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
@@ -180,7 +180,7 @@ void main() async {
             equals(
                 "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"));
       }));
-      final sub2 = nostr.pool.subscribe([
+      final sub2 = await nostr.pool.subscribe([
         {
           "ids": [
             "ef340ed732776c226307bc3ed5d3d75ba0c9c784214557dbab0819a027d51ce9"
@@ -266,7 +266,7 @@ void main() async {
           ]
         }
       ];
-      final subId = nostr.pool.subscribe(firstFilter, (event) {});
+      final subId = await nostr.pool.subscribe(firstFilter, (event) {});
       nostr.pool.subscribe(secondFilter, (event) {}, subId);
 
       expect(nostr.pool.subscriptions.length, equals(1));
@@ -311,10 +311,12 @@ void main() async {
       expect(ackRelay3, isFalse);
     });
 
-    test('Can retrieve an event from a real relay', () async {
+    test('can retrieve an event from a real relay', () async {
       final nostr = Nostr();
-      await nostr.pool.add('wss://nostr-pub.wellorder.net');
-      nostr.pool.subscribe([
+      await nostr.pool.add("wss://relay.damus.io");
+      await nostr.pool.add("wss://nostr-pub.wellorder.net");
+      await nostr.pool.add("wss://nostr.bitcoiner.social");
+      await nostr.pool.subscribe([
         {
           "authors": [
             "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
@@ -342,14 +344,14 @@ void main() async {
 
       final nostr = Nostr();
       await nostr.pool.add('ws://localhost:${relay.port}');
-      final sub1 = nostr.pool.subscribe([
+      final sub1 = await nostr.pool.subscribe([
         {
           "ids": [
             "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
           ]
         }
       ], (event) {});
-      final sub2 = nostr.pool.subscribe([
+      final sub2 = await nostr.pool.subscribe([
         {
           "ids": [
             "ef340ed732776c226307bc3ed5d3d75ba0c9c784214557dbab0819a027d51ce9"
@@ -383,7 +385,7 @@ void main() async {
       final nostr = Nostr();
       await nostr.pool.add('ws://localhost:${relay1.port}');
       await nostr.pool.add('ws://localhost:${relay2.port}');
-      final sub = nostr.pool.subscribe([
+      final sub = await nostr.pool.subscribe([
         {
           "ids": [
             "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
@@ -394,13 +396,6 @@ void main() async {
 
       expect(nostr.pool.subscriptions.contains(sub), isFalse);
     });
-
-    // test('throws an ArgumentError if subscriptionId is unknown', () async {
-    //   final relay = await fakeRelay(onData: (message) {}, listen: false);
-    //   final nostr = Nostr();
-    //   await nostr.pool.add('ws://localhost:${relay.port}');
-    //   expect(() => nostr.unsubscribe('1234'), throwsArgumentError);
-    // });
   });
 
   group('sendTextNote:', () {
@@ -473,11 +468,11 @@ void main() async {
       expect(ackRelay3, isTrue);
     });
 
-    test('Can send a text note to a real relay', () async {
+    test('can send a text note to a real relay', () async {
       final nostr =
           Nostr(privateKey: TestConstants.privateKey, powDifficulty: 16);
       await nostr.pool
-          .add('wss://nostr-pub.wellorder.net', access: WriteAccess.readWrite);
+          .add("wss://relay.damus.io", access: WriteAccess.readWrite);
       final event = nostr.sendTextNote("Hello Nostr!");
       nostr.pool.subscribe([
         {
