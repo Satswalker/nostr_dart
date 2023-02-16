@@ -27,6 +27,10 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
+      # Generate mocks before running tests or code analysis
+      - name: Generate test mocks
+        run: dart run build_runner build
+
       # Uncomment this step to verify the use of 'dart format' on each commit.
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
@@ -34,10 +38,6 @@ jobs:
       # Consider passing '--fatal-infos' for slightly stricter analysis.
       - name: Analyze project source
         run: dart analyze --fatal-infos
-
-      # Generate mocks before running tests
-      - name: Generate test mocks
-        run: dart run build_runner build
 
       # Your project will need to have tests in test/ and a dependency on
       # package:test for this step to succeed. Note that Flutter projects will
