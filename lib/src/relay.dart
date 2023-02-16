@@ -78,7 +78,7 @@ class Relay {
 
   Future<void> _send(String message) async {
     final completer = Completer();
-    completer.future.timeout(const Duration(seconds: 5), onTimeout: () {
+    completer.future.timeout(const Duration(minutes: 1), onTimeout: () {
       log("No response from $url");
       _pendingResponses.removeFirst().complete();
       disconnect();

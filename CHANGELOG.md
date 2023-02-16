@@ -38,3 +38,7 @@
 - Added `Nostr.pool.info` to get relay information documents. This interface is likely to change.
 - Added an automatic check for NIP-15 and NIP-20 support before connecting to a relay. Relays that don't support these protocol features will be rejected.
 - Added `Nostr.pool.isConnected` to get relay connection status. This interface is likely to change.
+
+## 0.6.1
+
+- Fixed subscription requests timing out prematurely.
