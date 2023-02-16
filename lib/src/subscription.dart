@@ -1,4 +1,4 @@
-import '../util.dart';
+import 'util.dart';
 
 /// Representation of a Nostr event subscription.
 class Subscription {

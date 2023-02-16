@@ -1,5 +1,4 @@
 import 'package:nostr_dart/nostr_dart.dart';
-import 'package:nostr_dart/src/relay.dart';
 
 void main() async {
   // Generate a new private key
@@ -12,8 +11,14 @@ void main() async {
 
   // Connect to a Nostr relay. This is an asynchronous operation so
   // consider using the `await` keyword.
-  const relayUrl = 'wss://relay.nostr.info';
-  await nostr.pool.add(relayUrl, access: WriteAccess.readWrite);
+  const relayUrl = 'wss://nostr-pub.wellorder.net';
+  await nostr.pool.add(Relay(relayUrl, access: WriteAccess.readWrite));
+
+  // Get relay information
+  final info = nostr.pool.info[relayUrl];
+  if (info != null) {
+    print(info.nips);
+  }
 
   // Retrieve an event
   final subId = await nostr.pool.subscribe([
@@ -22,7 +27,9 @@ void main() async {
         "00002de2e06d9630b58df3bc4f10e27febbc089286b5498bbbcac9baef3dd45a"
       ]
     }
-  ], (event) {});
+  ], (event) {
+    print(event.content);
+  });
 
   // Publish a text note
   nostr.sendTextNote('Hello Nostr!');

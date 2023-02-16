@@ -1,49 +1,25 @@
-import 'package:nostr_dart/src/relay.dart';
-import 'package:test/test.dart';
-import 'package:nostr_dart/nostr_dart.dart';
-import 'dart:io';
 import 'dart:convert';
+import 'package:test/test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:nostr_dart/nostr_dart.dart';
+import 'package:nostr_dart/src/relay_info_provider.mocks.dart';
 import 'constants.dart';
-
-Future<HttpServer> fakeRelay(
-    {required Function(dynamic json) onData,
-    List<dynamic> events = const [],
-    bool listen = true}) async {
-  final relay = await HttpServer.bind('localhost', 0);
-  if (listen) {
-    relay.transform(WebSocketTransformer()).listen(expectAsync1((webSocket) {
-      webSocket.listen((encodedMessage) {
-        final message = jsonDecode(encodedMessage);
-        onData(message);
-        final type = message[0];
-        if (type == "EVENT") {
-          final event = Event.fromJson(message[1]);
-          final response = ["OK", event.id, true, ""];
-          webSocket.add(jsonEncode(response));
-        } else if (type == "REQ") {
-          final subId = message[1];
-          for (dynamic event in events) {
-            List<dynamic> response = [event[0], subId, event[2]];
-            webSocket.add(jsonEncode(response));
-          }
-          final endNotice = ["EOSE", subId];
-          webSocket.add(jsonEncode(endNotice));
-        }
-      });
-    }));
-  } else {
-    relay.transform(WebSocketTransformer());
-  }
-  return relay;
-}
+import 'fake_relay.dart';
 
 void main() async {
   group('pool.add:', () {
     test('can connect to a single relay', () async {
       final relay = await fakeRelay(onData: (message) {}, listen: false);
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      final result = await nostr.pool.add('ws://localhost:${relay.port}');
+      final result = await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
 
       expect(result, isTrue);
       expect(nostr.pool.list.contains('ws://localhost:${relay.port}'), isTrue);
@@ -52,15 +28,28 @@ void main() async {
     test('can connect to multiple relays', () async {
       final relay1 = await fakeRelay(onData: (message) {}, listen: false);
       final relay2 = await fakeRelay(onData: (message) {}, listen: false);
+      final url1 = 'ws://localhost:${relay1.port}';
+      final url2 = 'ws://localhost:${relay2.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url1))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+      when(mockRelayInfoProvider.get(url2))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      bool result = await nostr.pool.add('ws://localhost:${relay1.port}');
+      bool result = await nostr.pool
+          .add(Relay(url1, relayInfoProvider: mockRelayInfoProvider));
       expect(result, isTrue);
-      result = await nostr.pool.add('ws://localhost:${relay2.port}');
+      result = await nostr.pool
+          .add(Relay(url2, relayInfoProvider: mockRelayInfoProvider));
       expect(result, isTrue);
 
-      expect(nostr.pool.list.contains('ws://localhost:${relay1.port}'), isTrue);
-      expect(nostr.pool.list.contains('ws://localhost:${relay2.port}'), isTrue);
+      expect(nostr.pool.list.contains(url1), isTrue);
+      expect(nostr.pool.list.contains(url2), isTrue);
     });
 
     test(
@@ -76,9 +65,21 @@ void main() async {
               ]
             }));
       }));
+      final url1 = 'ws://localhost:${relay1.port}';
+      final url2 = 'ws://localhost:${relay2.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url1))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+      when(mockRelayInfoProvider.get(url2))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay1.port}');
+      await nostr.pool
+          .add(Relay(url1, relayInfoProvider: mockRelayInfoProvider));
       nostr.pool.subscribe([
         {
           "ids": [
@@ -86,35 +87,73 @@ void main() async {
           ]
         }
       ], (event) {});
-      await nostr.pool
-          .add('ws://localhost:${relay2.port}', autoSubscribe: true);
+      await nostr.pool.add(
+          Relay(url2, relayInfoProvider: mockRelayInfoProvider),
+          autoSubscribe: true);
     });
 
     test('returns false if url is invalid', () async {
+      final url = 'localhost';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
       final nostr = Nostr();
-      bool result = await nostr.pool.add('localhost');
+      bool result = await nostr.pool.add(Relay(url));
       expect(result, isFalse);
-      expect(nostr.pool.list.length, equals(0));
+      expect(nostr.pool.list.length, isZero);
+    });
+
+    test("returns false if relay doesn't support NIP-15 or NIP-20", () async {
+      final relay = await fakeRelay(onData: (message) {}, listen: false);
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [1, 2, 3, 16, 30]
+              }));
+
+      final nostr = Nostr();
+      final result = await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
+
+      expect(result, isFalse);
+      expect(nostr.pool.list.length, isZero);
     });
   });
 
   group('pool.remove:', () {
     test('removes a specified relay from the relay pool', () async {
       final relay = await fakeRelay(onData: (message) {}, listen: false);
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay.port}');
-      expect(nostr.pool.list.contains('ws://localhost:${relay.port}'), isTrue);
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
+      expect(nostr.pool.list.contains(url), isTrue);
 
-      nostr.pool.remove('ws://localhost:${relay.port}');
-      expect(nostr.pool.list.contains('ws://localhost:${relay.port}'), isFalse);
+      nostr.pool.remove(url);
+      expect(nostr.pool.list.contains(url), isFalse);
     });
 
     test('ignores an unknown url', () async {
       final relay = await fakeRelay(onData: (message) {}, listen: false);
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay.port}');
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
       expect(nostr.pool.list.length, equals(1));
       nostr.pool.remove('ws://example.com');
       expect(nostr.pool.list.length, equals(1));
@@ -134,18 +173,32 @@ void main() async {
         expect(json[1], equals("sub_1"));
         expect(json[2], equals(filter));
       }));
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay.port}');
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
       nostr.pool.subscribe([filter], (event) {}, "sub_1");
     });
 
     test('can request and receive a single event', () async {
       final relay = await fakeRelay(
           onData: (message) {}, events: [TestConstants.relayEvent1]);
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay.port}');
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
       nostr.pool.subscribe([
         {
           "ids": [
@@ -164,9 +217,16 @@ void main() async {
       final relay = await fakeRelay(
           onData: (message) {},
           events: [TestConstants.relayEvent1, TestConstants.relayEvent2]);
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay.port}');
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
 
       final sub1 = await nostr.pool.subscribe([
         {
@@ -218,10 +278,23 @@ void main() async {
               ]
             }));
       }));
+      final url1 = 'ws://localhost:${relay1.port}';
+      final url2 = 'ws://localhost:${relay2.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url1))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+      when(mockRelayInfoProvider.get(url2))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay1.port}');
-      await nostr.pool.add('ws://localhost:${relay2.port}');
+      await nostr.pool
+          .add(Relay(url1, relayInfoProvider: mockRelayInfoProvider));
+      await nostr.pool
+          .add(Relay(url2, relayInfoProvider: mockRelayInfoProvider));
       nostr.pool.subscribe([
         {
           "ids": [
@@ -235,9 +308,16 @@ void main() async {
       final relay = await fakeRelay(onData: expectAsync1((message) {
         expect(message[1], equals('1234'));
       }));
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay.port}');
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
       nostr.pool.subscribe([
         {
           "ids": [
@@ -249,9 +329,16 @@ void main() async {
 
     test('updates existing subscription', () async {
       final relay = await fakeRelay(onData: (message) {});
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay.port}');
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
       const firstFilter = [
         {
           "ids": [
@@ -287,14 +374,32 @@ void main() async {
       final relay3 = await fakeRelay(onData: (message) {
         ackRelay3 = true;
       });
+      final url1 = 'ws://localhost:${relay1.port}';
+      final url2 = 'ws://localhost:${relay2.port}';
+      final url3 = 'ws://localhost:${relay3.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url1))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+      when(mockRelayInfoProvider.get(url2))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+      when(mockRelayInfoProvider.get(url3))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool
-          .add('ws://localhost:${relay1.port}'); // read-only by default
-      await nostr.pool
-          .add('ws://localhost:${relay2.port}', access: WriteAccess.readWrite);
-      await nostr.pool
-          .add('ws://localhost:${relay3.port}', access: WriteAccess.writeOnly);
+      await nostr.pool.add(Relay(url1,
+          relayInfoProvider: mockRelayInfoProvider)); // read-only by default
+      await nostr.pool.add(Relay(url2,
+          access: WriteAccess.readWrite,
+          relayInfoProvider: mockRelayInfoProvider));
+      await nostr.pool.add(Relay(url3,
+          access: WriteAccess.writeOnly,
+          relayInfoProvider: mockRelayInfoProvider));
 
       nostr.pool.subscribe([
         {
@@ -313,9 +418,9 @@ void main() async {
 
     test('can retrieve an event from a real relay', () async {
       final nostr = Nostr();
-      await nostr.pool.add("wss://relay.damus.io");
-      await nostr.pool.add("wss://nostr-pub.wellorder.net");
-      await nostr.pool.add("wss://nostr.bitcoiner.social");
+      await nostr.pool.add(Relay("wss://relay.damus.io"));
+      await nostr.pool.add(Relay("wss://nostr-pub.wellorder.net"));
+      await nostr.pool.add(Relay("wss://nostr.bitcoiner.social"));
       await nostr.pool.subscribe([
         {
           "authors": [
@@ -327,7 +432,7 @@ void main() async {
         print(event.content);
       });
       await Future.delayed(Duration(seconds: 5));
-    }, skip: "Just for debugging. Don't run for CI tests.");
+    }, skip: "For exploratory testing only, connects to actual relays.");
   });
 
   group('unsubscribe:', () {
@@ -341,9 +446,16 @@ void main() async {
         }
         count++;
       });
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay.port}');
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
       final sub1 = await nostr.pool.subscribe([
         {
           "ids": [
@@ -381,10 +493,23 @@ void main() async {
         }
         count2++;
       });
+      final url1 = 'ws://localhost:${relay1.port}';
+      final url2 = 'ws://localhost:${relay2.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url1))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+      when(mockRelayInfoProvider.get(url2))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr();
-      await nostr.pool.add('ws://localhost:${relay1.port}');
-      await nostr.pool.add('ws://localhost:${relay2.port}');
+      await nostr.pool
+          .add(Relay(url1, relayInfoProvider: mockRelayInfoProvider));
+      await nostr.pool
+          .add(Relay(url2, relayInfoProvider: mockRelayInfoProvider));
       final sub = await nostr.pool.subscribe([
         {
           "ids": [
@@ -406,10 +531,17 @@ void main() async {
         expect(event.kind, equals(EventKind.textNote));
         expect(event.content, equals("Hello World!"));
       }));
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr(privateKey: TestConstants.privateKey);
-      await nostr.pool
-          .add('ws://localhost:${relay.port}', access: WriteAccess.readWrite);
+      await nostr.pool.add(Relay(url,
+          access: WriteAccess.readWrite,
+          relayInfoProvider: mockRelayInfoProvider));
       nostr.sendTextNote("Hello World!");
     });
 
@@ -422,10 +554,17 @@ void main() async {
               ["e", TestConstants.id]
             ]));
       }));
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr(privateKey: TestConstants.privateKey);
-      await nostr.pool
-          .add('ws://localhost:${relay.port}', access: WriteAccess.readWrite);
+      await nostr.pool.add(Relay(url,
+          access: WriteAccess.readWrite,
+          relayInfoProvider: mockRelayInfoProvider));
       nostr.sendTextNote("Hello World!", [
         ["e", TestConstants.id]
       ]);
@@ -450,14 +589,32 @@ void main() async {
       final relay3 = await fakeRelay(onData: (message) {
         ackRelay3 = true;
       });
+      final url1 = 'ws://localhost:${relay1.port}';
+      final url2 = 'ws://localhost:${relay2.port}';
+      final url3 = 'ws://localhost:${relay3.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url1))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+      when(mockRelayInfoProvider.get(url2))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+      when(mockRelayInfoProvider.get(url3))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr(privateKey: TestConstants.privateKey);
-      await nostr.pool
-          .add('ws://localhost:${relay1.port}'); // read-only by default
-      await nostr.pool
-          .add('ws://localhost:${relay2.port}', access: WriteAccess.readWrite);
-      await nostr.pool
-          .add('ws://localhost:${relay3.port}', access: WriteAccess.writeOnly);
+      await nostr.pool.add(Relay(url1,
+          relayInfoProvider: mockRelayInfoProvider)); // read-only by default
+      await nostr.pool.add(Relay(url2,
+          access: WriteAccess.readWrite,
+          relayInfoProvider: mockRelayInfoProvider));
+      await nostr.pool.add(Relay(url3,
+          access: WriteAccess.writeOnly,
+          relayInfoProvider: mockRelayInfoProvider));
 
       nostr.sendTextNote("Hello Nostr!");
 
@@ -472,7 +629,7 @@ void main() async {
       final nostr =
           Nostr(privateKey: TestConstants.privateKey, powDifficulty: 16);
       await nostr.pool
-          .add("wss://relay.damus.io", access: WriteAccess.readWrite);
+          .add(Relay("wss://relay.damus.io", access: WriteAccess.readWrite));
       final event = nostr.sendTextNote("Hello Nostr!");
       nostr.pool.subscribe([
         {
@@ -481,7 +638,7 @@ void main() async {
       ], expectAsync1((event) {
         expect(event.content, equals("Hello Nostr"));
       }));
-    }, skip: "Just for debugging. Don't run for CI tests.");
+    }, skip: "For exploratory testing only, connects to actual relays.");
   });
 
   group('sendMetaData:', () {
@@ -500,10 +657,17 @@ void main() async {
         expect(metaData['about'], equals(about));
         expect(metaData['picture'], equals(picture));
       }));
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr(privateKey: TestConstants.privateKey);
-      await nostr.pool
-          .add('ws://localhost:${relay.port}', access: WriteAccess.readWrite);
+      await nostr.pool.add(Relay(url,
+          access: WriteAccess.readWrite,
+          relayInfoProvider: mockRelayInfoProvider));
       nostr.sendMetaData(name: name, about: about, picture: picture);
     });
 
@@ -516,10 +680,17 @@ void main() async {
         expect(metaData.length, equals(1));
         expect(metaData['about'], equals(about));
       }));
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr(privateKey: TestConstants.privateKey);
-      await nostr.pool
-          .add('ws://localhost:${relay.port}', access: WriteAccess.readWrite);
+      await nostr.pool.add(Relay(url,
+          access: WriteAccess.readWrite,
+          relayInfoProvider: mockRelayInfoProvider));
       nostr.sendMetaData(about: about);
     });
 
@@ -536,19 +707,26 @@ void main() async {
 
   group('recommendServer:', () {
     test('sends a valid recommend_server event', () async {
-      const String url = 'wss://nostr.fmt.wiz.biz';
+      const String recommendedUrl = 'wss://nostr.fmt.wiz.biz';
 
       final relay = await fakeRelay(onData: expectAsync1((message) {
         expect(message[0], "EVENT");
         final event = Event.fromJson(message[1]);
         expect(event.kind, equals(EventKind.recommendServer));
-        expect(event.content, equals(url));
+        expect(event.content, equals(recommendedUrl));
       }));
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr(privateKey: TestConstants.privateKey);
-      await nostr.pool
-          .add('ws://localhost:${relay.port}', access: WriteAccess.readWrite);
-      nostr.recommendServer(url);
+      await nostr.pool.add(Relay(url,
+          access: WriteAccess.readWrite,
+          relayInfoProvider: mockRelayInfoProvider));
+      nostr.recommendServer(recommendedUrl);
     });
 
     test('raises an exception if url is not a valid websocket', () {
@@ -582,10 +760,17 @@ void main() async {
         expect(event.tags, equals(tags));
         expect(event.content, equals(""));
       }));
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
 
       final nostr = Nostr(privateKey: TestConstants.privateKey);
-      await nostr.pool
-          .add('ws://localhost:${relay.port}', access: WriteAccess.readWrite);
+      await nostr.pool.add(Relay(url,
+          access: WriteAccess.readWrite,
+          relayInfoProvider: mockRelayInfoProvider));
       final contacts = ContactList.fromJson(tags);
       nostr.sendContactList(contacts);
     });

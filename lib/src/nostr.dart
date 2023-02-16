@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:async';
-import 'model/event.dart';
+import 'event.dart';
 import 'keys.dart';
-import 'model/contact_list.dart';
+import 'contact_list.dart';
 import 'relay_pool.dart';
 
 /// The base class for a Nostr client.

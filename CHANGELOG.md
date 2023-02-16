@@ -31,3 +31,10 @@
 
 - Shortened the length of randomly assigned Subscription IDs to an 8-byte hexadecimal string. Some relays were rejecting a 32-byte hexadecimal.
 - `Nostr.pool.subscribe` is now an asynchronous operation returning a `Future` that completes when all expected end-of-stored events notices have been received.
+
+## 0.6.0
+
+- Added support for [NIP-11: Relay Information Document](https://github.com/nostr-protocol/nips/blob/master/11.md). This includes a breaking API change to `Nostr.pool.add` which now takes a `Relay` object instead of a URL `string` and `access` read/write configuration.
+- Added `Nostr.pool.info` to get relay information documents. This interface is likely to change.
+- Added an automatic check for NIP-15 and NIP-20 support before connecting to a relay. Relays that don't support these protocol features will be rejected.
+- Added `Nostr.pool.isConnected` to get relay connection status. This interface is likely to change.

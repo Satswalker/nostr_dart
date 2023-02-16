@@ -5,8 +5,8 @@ import 'package:clock/clock.dart';
 import 'package:bip340/bip340.dart' as schnorr;
 import 'package:hex/hex.dart';
 import 'package:string_validator/string_validator.dart';
-import '../keys.dart';
-import '../util.dart';
+import 'keys.dart';
+import 'util.dart';
 
 /// A Nostr event
 ///

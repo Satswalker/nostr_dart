@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-import 'model/subscription.dart';
-import 'model/event.dart';
+import 'package:nostr_dart/src/relay_info.dart';
+
+import 'subscription.dart';
+import 'event.dart';
 import 'relay.dart';
 
 /// The relay pool.
@@ -19,39 +21,39 @@ class RelayPool {
   /// A list of subscription IDs of existing subscriptions
   List<String> get subscriptions => _subscriptions.keys.toList();
 
-  /// Connects to the relay specified by [url].
+  /// A map of relay information documents using relay URL as the key.
+  Map<String, RelayInfo> get info =>
+      _relays.map((key, value) => MapEntry(key, value.info));
+
+  /// A map of relay connection status using relay URL as the key.
+  Map<String, bool> get isConnected =>
+      _relays.map((key, value) => MapEntry(key, value.isConnected));
+
+  /// Connects to a relay and adds it to the relay pool.
   ///
-  /// If the client has any existing subscriptions these will be requested
-  /// automatically from the newly connected relay if [autoSubscribe] is `true`.
+  /// [relay] is a `Relay` object representing the relay to be added.
+  /// Relays must support [NIP-15: End of Stored Events Notice](https://github.com/nostr-protocol/nips/blob/master/15.md) and [NIP-20: Command Results](https://github.com/nostr-protocol/nips/blob/master/20.md)
+  /// and will be rejected if they don't support these protocol features.
+  /// [autoSubscribe] specifies if existing event subscriptions should be
+  /// automatically requested from the newly added relay. The default behaviour
+  /// is to not request automatically.
   ///
-  /// [access] specifies read/write access for the added relay and may be set to
-  /// either `WriteAccess.readOnly`, `WriteAccess.writeOnly`, or
-  /// `WriteAccess.readWrite`. If not provided the default is read-only.
-  ///
-  /// NOTE: Relays must support [NIP-15: End of Stored Events Notice](https://github.com/nostr-protocol/nips/blob/master/15.md) and [NIP-20: Command Results](https://github.com/nostr-protocol/nips/blob/master/20.md)
-  /// In a future version `nostr_dart` will check that added relays support
-  /// these NIPs but for now this check is unimplemented.
-  ///
-  /// Returns `true` if [url] was added successfully or it was already
-  /// present. Returns `false` if [url] could not be added.
-  ///
-  /// A [WebSocketException] is thrown if [url] is not a valid relay URL.
-  /// A [TimeoutException] is thrown if the connection attempt times out.
-  Future<bool> add(String url,
-      {bool autoSubscribe = false,
-      WriteAccess access = WriteAccess.readOnly}) async {
-    if (_relays.containsKey(url)) {
+  /// Returns `true` if [relay] was added successfully or it was already
+  /// present in the relay pool. Returns `false` if [relay] could not be added.
+  Future<bool> add(Relay relay, {bool autoSubscribe = false}) async {
+    if (_relays.containsKey(relay.url)) {
       return true;
     }
 
-    final relay = Relay(url, access: access, onDone: (relay) {
-      log('$url websocket stream closed');
+    relay.onError = (url) {
+      log('Could not send or reconnect to relay $url');
       remove(url);
-    });
+    };
+
     relay.listen(_onEvent);
 
     if (await relay.connect()) {
-      _relays[url] = relay;
+      _relays[relay.url] = relay;
       if (autoSubscribe) {
         for (Subscription subscription in _subscriptions.values) {
           final message = jsonEncode(subscription.toJson());

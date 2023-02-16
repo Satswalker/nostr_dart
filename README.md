@@ -14,6 +14,7 @@ Supported Nostr Implementation Possibilities:
 
 - [NIP-01: Basic protocol flow description](https://github.com/nostr-protocol/nips/blob/master/01.md)
 - [NIP-02: Contact List and Petnames](https://github.com/nostr-protocol/nips/blob/master/02.md)
+- [NIP-11: Relay Information Document](https://github.com/nostr-protocol/nips/blob/master/11.md)
 - [NIP-13: Proof of Work](https://github.com/nostr-protocol/nips/blob/master/13.md)
 - [NIP-15: End of Stored Events Notice](https://github.com/nostr-protocol/nips/blob/master/15.md)
 - [NIP-20: Command Results](https://github.com/nostr-protocol/nips/blob/master/20.md)
@@ -37,10 +38,28 @@ import 'package:nostr_dart/nostr_dart.dart'
 final nostr = Nostr(privateKey: [private key], powDifficulty: [difficulty]);
 ```
 
-Add a relay:
+Add a relay for subscribing to events only:
 
 ```dart
-await nostr.pool.add([Relay URL]);
+await nostr.pool.add(Relay([Relay URL]));
+```
+
+Add a relay for subscribing and publishing events:
+
+```dart
+await nostr.pool.add(Relay([Relay URL], access: WriteAccess.readWrite));
+```
+
+Retrieve relay information:
+
+```dart
+final info = nostr.pool.info[Relay URL];
+print(info.name);
+
+// or 
+for (RelayInfo relay in nostr.pool.info.values) {
+  print(relay.name);
+}
 ```
 
 Retrieve events from connected relays and subscribe to updates:
@@ -98,3 +117,10 @@ nostr.pool.remove([Relay URL]);
 ## Contributing
 
 Pull requests are welcome. Please write tests to cover your new feature.
+
+To run nostr_dart tests, from the `nostr_dart` directory:
+
+```sh
+dart run build_runner build
+dart test
+```

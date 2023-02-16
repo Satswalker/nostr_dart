@@ -1,5 +1,5 @@
 import 'dart:collection';
-import '../keys.dart';
+import 'keys.dart';
 
 /// A single contact for use with [ContactList]
 class Contact {

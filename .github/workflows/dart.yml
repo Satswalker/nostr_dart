@@ -35,6 +35,10 @@ jobs:
       - name: Analyze project source
         run: dart analyze --fatal-infos
 
+      # Generate mocks before running tests
+      - name: Generate test mocks
+        run: dart run build_runner build
+
       # Your project will need to have tests in test/ and a dependency on
       # package:test for this step to succeed. Note that Flutter projects will
       # want to change this to 'flutter test'.

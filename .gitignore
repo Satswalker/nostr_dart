@@ -11,3 +11,6 @@ pubspec.lock
 
 # vscode configuration
 .vscode/
+
+# Omit generated mocks
+lib/src/*.mocks.dart
