@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:developer';
 import 'package:nostr_dart/src/relay_info.dart';
 
@@ -56,8 +55,7 @@ class RelayPool {
       _relays[relay.url] = relay;
       if (autoSubscribe) {
         for (Subscription subscription in _subscriptions.values) {
-          final message = jsonEncode(subscription.toJson());
-          relay.send(message);
+          relay.send(subscription.toJson());
         }
       }
       return true;
@@ -77,22 +75,21 @@ class RelayPool {
   /// Note that if an error occurs when [jsonMessage] is sent to an individual
   /// relay, for example if a timeout occurs, then the failing relay will be
   /// automatically removed from the pool.
-  Future<void> send(List<dynamic> jsonMessage) async {
+  Future<void> send(List<dynamic> message) async {
     List<Future<void>> futures = [];
 
     for (Relay relay in _relays.values) {
-      if (jsonMessage[0] == "EVENT") {
+      if (message[0] == "EVENT") {
         if (relay.access == WriteAccess.readOnly) {
           continue;
         }
       }
-      if (jsonMessage[0] == "REQ" || jsonMessage[0] == "CLOSE") {
+      if (message[0] == "REQ" || message[0] == "CLOSE") {
         if (relay.access == WriteAccess.writeOnly) {
           continue;
         }
       }
       try {
-        final message = jsonEncode(jsonMessage);
         futures.add(relay.send(message));
       } catch (err) {
         log(err.toString());

@@ -92,7 +92,7 @@ void main() {
       final relay = Relay(url, relayInfoProvider: mockRelayInfoProvider);
       await relay.connect();
       await Future.delayed(const Duration(seconds: 1));
-      await relay.send(jsonEncode(TestConstants.clientEvent1));
+      await relay.send(TestConstants.clientEvent1);
     });
   });
 }
