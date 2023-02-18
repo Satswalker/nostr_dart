@@ -434,7 +434,7 @@ void main() async {
       await Future.delayed(Duration(seconds: 5));
     }, skip: "For exploratory testing only, connects to actual relays.");
 
-    test('can subscribe > unsubscribe > subscribe', () async {
+    test('can subscribe, unsubscribe, then subscribe again', () async {
       final relay = await fakeRelay(
           onData: (message) {}, events: [TestConstants.relayEvent1]);
       final url = 'ws://localhost:${relay.port}';

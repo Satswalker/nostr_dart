@@ -72,11 +72,11 @@ class Relay {
     await _ws.reset();
   }
 
-  Future<void> send(String message) async {
+  Future<void> send(List<dynamic> message) async {
     return _jobRunner.add(() => _send(message));
   }
 
-  Future<void> _send(String message) async {
+  Future<void> _send(List<dynamic> message) async {
     final completer = Completer();
     completer.future.timeout(const Duration(minutes: 1), onTimeout: () {
       log("No response from $url");
@@ -86,7 +86,8 @@ class Relay {
     _pendingResponses.add(completer);
 
     try {
-      _ws.send(message);
+      final encoded = jsonEncode(message);
+      _ws.send(encoded);
     } catch (e) {
       _pendingResponses.removeFirst().complete();
       disconnect();
@@ -95,6 +96,10 @@ class Relay {
       }
     }
 
+    final isAckExpected = message[0] != "CLOSE";
+    if (!isAckExpected) {
+      _pendingResponses.removeFirst().complete();
+    }
     await completer.future;
   }
 
