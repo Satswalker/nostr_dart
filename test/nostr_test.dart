@@ -433,6 +433,39 @@ void main() async {
       });
       await Future.delayed(Duration(seconds: 5));
     }, skip: "For exploratory testing only, connects to actual relays.");
+
+    test('can subscribe > unsubscribe > subscribe', () async {
+      final relay = await fakeRelay(
+          onData: (message) {}, events: [TestConstants.relayEvent1]);
+      final url = 'ws://localhost:${relay.port}';
+      final mockRelayInfoProvider = MockRelayInfoProvider();
+      when(mockRelayInfoProvider.get(url))
+          .thenAnswer((_) async => RelayInfo.fromJson({
+                "supported_nips": [15, 20]
+              }));
+
+      final nostr = Nostr();
+      await nostr.pool
+          .add(Relay(url, relayInfoProvider: mockRelayInfoProvider));
+      await nostr.pool.subscribe([
+        {
+          "ids": [
+            "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
+          ]
+        }
+      ], expectAsync1((event) {
+        expect(event.content, equals("The world says hello."));
+      })).then((subId) => nostr.pool.unsubscribe(subId));
+      await nostr.pool.subscribe([
+        {
+          "ids": [
+            "88584637dd3434e0694165581455a6f9ec9010831a0cf1c2b65ae52c677dfea6"
+          ]
+        }
+      ], expectAsync1((event) {
+        expect(event.content, equals("The world says hello."));
+      }));
+    });
   });
 
   group('unsubscribe:', () {
