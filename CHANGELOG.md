@@ -42,3 +42,7 @@
 ## 0.6.1
 
 - Fixed subscription requests timing out prematurely.
+
+## 0.6.2
+
+- Fixed subscription requests timing out after a previous call to `Nostr.pool.unsubscribe`.
