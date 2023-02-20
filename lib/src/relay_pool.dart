@@ -158,10 +158,12 @@ class RelayPool {
     if (messageType == 'EVENT') {
       try {
         final event = Event.fromJson(json[2]);
-        event.source = json[3] ?? '';
-        final subId = json[1] as String;
-        final subscriber = _subscriptions[subId];
-        subscriber?.onEvent(event);
+        if (event.isValid) {
+          event.source = json[3] ?? '';
+          final subId = json[1] as String;
+          final subscriber = _subscriptions[subId];
+          subscriber?.onEvent(event);
+        }
       } catch (err) {
         // OK to swallow these exceptions. They are only event data validation
         // or signature verification failures. Invalid events are ignored.

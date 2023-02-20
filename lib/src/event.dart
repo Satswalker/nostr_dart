@@ -4,7 +4,6 @@ import 'package:crypto/crypto.dart';
 import 'package:clock/clock.dart';
 import 'package:bip340/bip340.dart' as schnorr;
 import 'package:hex/hex.dart';
-import 'package:string_validator/string_validator.dart';
 import 'keys.dart';
 import 'util.dart';
 
@@ -41,9 +40,6 @@ class Event {
     final tags = data['tags'];
     final content = data['content'] as String;
     final sig = data['sig'] as String;
-
-    _validate(id, pubKey, createdAt, kind, tags, content);
-    _verifySignature(id, pubKey, sig);
 
     return Event._(id, pubKey, createdAt, kind, tags, content, sig);
   }
@@ -113,6 +109,18 @@ class Event {
     }
   }
 
+  bool get isValid {
+    // Validate event data
+    if (id != _getId(pubKey, createdAt, kind, tags, content)) {
+      return false;
+    }
+    // Verify event signature
+    if (!schnorr.verify(pubKey, id, sig)) {
+      return false;
+    }
+    return true;
+  }
+
   // Individual events with the same "id" are equivalent
   @override
   bool operator ==(other) => other is Event && id == other.id;
@@ -132,23 +140,6 @@ class Event {
     final bytes = utf8.encode(jsonData);
     final digest = sha256.convert(bytes);
     return digest.toString();
-  }
-
-  static void _validate(id, publicKey, createdAt, kind, tags, content) {
-    if (!isHexadecimal(id) || id.length != 64) {
-      throw ArgumentError('"id" is invalid', 'Event.fromJson');
-    }
-    final expectedId = _getId(publicKey, createdAt, kind, tags, content);
-    if (id != expectedId) {
-      throw ArgumentError('Event payload failed checksum', 'Event.fromJson');
-    }
-  }
-
-  static void _verifySignature(id, publicKey, signature) {
-    if (!schnorr.verify(publicKey, id, signature)) {
-      throw ArgumentError(
-          'Event signature failed verification', 'Event.fromJson');
-    }
   }
 
   int _countLeadingZeroBytes(String eventId) {

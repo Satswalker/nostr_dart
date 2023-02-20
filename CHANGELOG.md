@@ -46,3 +46,7 @@
 ## 0.6.2
 
 - Fixed subscription requests timing out after a previous call to `Nostr.pool.unsubscribe`.
+
+## 0.6.3
+
+- Received events that fail validation checks are discarded without throwing an exception to improve performance.

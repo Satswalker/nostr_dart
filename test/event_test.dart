@@ -39,27 +39,6 @@ void main() {
 
       expect(event.tags[1], ["p", TestConstants.publicKey]);
     });
-
-    test('Raises an exception if "id" in JSON data is invalid', () {
-      // id is not a hexadecimal string
-      String json =
-          '{ "id": "${TestConstants.idNotHex}", "pubkey": "${TestConstants.publicKey}", "created_at": ${TestConstants.timestamp}, "kind": ${TestConstants.kindTextNote}, "tags": [], "content": "${TestConstants.content}", "sig": "1234567812345678123456781234567812345678123456781234567812345678" }';
-      var parsedJson = jsonDecode(json);
-      expect(() => Event.fromJson(parsedJson), throwsArgumentError);
-
-      // id isn't the correct length
-      json =
-          '{ "id": "${TestConstants.idWrongLength}", "pubkey": "${TestConstants.publicKey}", "created_at": ${TestConstants.timestamp}, "kind": ${TestConstants.kindTextNote}, "tags": [], "content": "${TestConstants.content}", "sig": "1234567812345678123456781234567812345678123456781234567812345678" }';
-      parsedJson = jsonDecode(json);
-      expect(() => Event.fromJson(parsedJson), throwsArgumentError);
-    });
-
-    test('Raises an exception if the event signature is incorrect', () {
-      const String json =
-          '{ "id": "${TestConstants.id}", "pubkey": "${TestConstants.publicKey}", "created_at": ${TestConstants.timestamp}, "kind": ${TestConstants.kindTextNote}, "tags": [], "content": "${TestConstants.content}", "sig": "1234567812345678123456781234567812345678123456781234567812345678" }';
-      var parsedJson = jsonDecode(json);
-      expect(() => Event.fromJson(parsedJson), throwsArgumentError);
-    });
   });
 
   group('compose:', () {
@@ -128,6 +107,46 @@ void main() {
       final event = Event(TestConstants.publicKey, TestConstants.kindTextNote,
           TestConstants.emptyTags, TestConstants.content);
       event.sign(TestConstants.idNotHex);
+    });
+  });
+
+  group('isValid:', () {
+    test('returns `true` if event ID and signature are valid', () {
+      final event = Event(TestConstants.publicKey, EventKind.textNote, [],
+          TestConstants.content);
+      event.sign(TestConstants.privateKey);
+      expect(event.isValid, isTrue);
+    });
+
+    test('returns `false` if "id" is invalid', () {
+      final json = {
+        "id":
+            "1234567812345678123456781234567812345678123456781234567812345678",
+        "pubkey": TestConstants.publicKey,
+        "created_at": TestConstants.timestamp,
+        "kind": TestConstants.kindTextNote,
+        "tags": [],
+        "content": TestConstants.content,
+        "sig": ""
+      };
+      final event = Event.fromJson(json);
+      event.sign(TestConstants.privateKey);
+      expect(event.isValid, isFalse);
+    });
+
+    test('returns `false` if the event signature is incorrect', () {
+      final json = {
+        "id": TestConstants.id,
+        "pubkey": TestConstants.publicKey,
+        "created_at": TestConstants.timestamp,
+        "kind": TestConstants.kindTextNote,
+        "tags": [],
+        "content": TestConstants.content,
+        "sig":
+            "1234567812345678123456781234567812345678123456781234567812345678"
+      };
+      final event = Event.fromJson(json);
+      expect(event.isValid, isFalse);
     });
   });
 
