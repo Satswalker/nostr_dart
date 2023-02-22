@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:nostr_dart/nostr_dart.dart';
-
 import 'event.dart';
 import 'keys.dart';
 import 'contact_list.dart';
