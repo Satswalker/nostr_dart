@@ -13,6 +13,10 @@ import 'relay.dart';
 class RelayPool {
   final Map<String, Relay> _relays = {};
   final Map<String, Subscription> _subscriptions = {};
+  final bool _doSignatureVerification;
+
+  RelayPool({bool disableSignatureVerification = false})
+      : _doSignatureVerification = !disableSignatureVerification;
 
   /// A list of relay urls currently in the relay pool.
   List<String> get list => _relays.keys.toList();
@@ -158,7 +162,8 @@ class RelayPool {
     if (messageType == 'EVENT') {
       try {
         final event = Event.fromJson(json[2]);
-        if (event.isValid) {
+        if (event.isValid &&
+            (_doSignatureVerification ? event.isSigned : true)) {
           event.source = json[3] ?? '';
           final subId = json[1] as String;
           final subscriber = _subscriptions[subId];

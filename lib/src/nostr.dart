@@ -7,6 +7,12 @@ import 'relay_pool.dart';
 
 /// The base class for a Nostr client.
 class Nostr {
+  String _privateKey;
+  String _publicKey = '';
+  final int powDifficulty;
+  final pool = RelayPool();
+  final bool disableSignatureVerification;
+
   /// Creates a Nostr client.
   ///
   /// [privateKey] is the user's secret key used for signing event messages and
@@ -19,20 +25,25 @@ class Nostr {
   /// be performed before publishing events. If [powDifficulty] is not provided
   /// proof-of-work is not performed.
   ///
+  /// [disableSignatureVerification] disables signature verification of received
+  /// events when set to `true`. WARNING: By enabling this setting you will have
+  /// no proof that received events have been created by who they say they are.
+  /// This option is a temporary work-around until performance of signature
+  /// verification is improved. By default signature verification is performed.
+  /// If signature verification is disabled you can still verify the signature
+  /// of individual events on a case-by-case basis with `Event.isValid`.
+  ///
   /// Example:
   /// ```dart
   /// final nostr = Nostr(privateKey: "91cf9..4e5ca", powDifficulty: 16);
   /// ```
-  Nostr({String privateKey = '', powDifficulty = 0})
-      : _privateKey = privateKey,
-        _powDifficulty = powDifficulty {
+  Nostr(
+      {String privateKey = '',
+      this.powDifficulty = 0,
+      this.disableSignatureVerification = false})
+      : _privateKey = privateKey {
     _publicKey = privateKey.isNotEmpty ? getPublicKey(privateKey) : '';
   }
-
-  String _privateKey;
-  String _publicKey = '';
-  final int _powDifficulty;
-  final pool = RelayPool();
 
   /// Sets the secret key used for signing events.
   ///
@@ -196,7 +207,7 @@ class Nostr {
     if (_privateKey.isEmpty) {
       throw StateError("Private key is missing. Message can't be signed.");
     }
-    event.doProofOfWork(_powDifficulty);
+    event.doProofOfWork(powDifficulty);
     event.sign(_privateKey);
     pool.send(["EVENT", event.toJson()]);
     return event;

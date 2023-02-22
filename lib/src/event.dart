@@ -114,7 +114,10 @@ class Event {
     if (id != _getId(pubKey, createdAt, kind, tags, content)) {
       return false;
     }
-    // Verify event signature
+    return true;
+  }
+
+  bool get isSigned {
     if (!schnorr.verify(pubKey, id, sig)) {
       return false;
     }

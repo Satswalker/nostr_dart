@@ -111,7 +111,7 @@ void main() {
   });
 
   group('isValid:', () {
-    test('returns `true` if event ID and signature are valid', () {
+    test('returns `true` if event ID is valid', () {
       final event = Event(TestConstants.publicKey, EventKind.textNote, [],
           TestConstants.content);
       event.sign(TestConstants.privateKey);
@@ -133,7 +133,15 @@ void main() {
       event.sign(TestConstants.privateKey);
       expect(event.isValid, isFalse);
     });
+  });
 
+  group('isSigned', () {
+    test('returns `true` if the event signature is correct', () {
+      final event = Event(TestConstants.publicKey, EventKind.textNote, [],
+          TestConstants.content);
+      event.sign(TestConstants.privateKey);
+      expect(event.isSigned, isTrue);
+    });
     test('returns `false` if the event signature is incorrect', () {
       final json = {
         "id": TestConstants.id,
@@ -146,7 +154,7 @@ void main() {
             "1234567812345678123456781234567812345678123456781234567812345678"
       };
       final event = Event.fromJson(json);
-      expect(event.isValid, isFalse);
+      expect(event.isSigned, isFalse);
     });
   });
 
