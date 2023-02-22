@@ -54,3 +54,7 @@
 ## 0.6.4
 
 - Added an option to the `Nostr` constructor to disable signature verification as events are received. This is a temporary work-around for inadequate signature verification performance. The default remains for signature verification to be performed. When disabled, the signatures of individual events can still be verified using `Event.isSigned`.
+
+## 0.6.5
+
+- Hotfix. Option added in 0.6.4 wasn't working.

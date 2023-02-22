@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:nostr_dart/nostr_dart.dart';
+
 import 'event.dart';
 import 'keys.dart';
 import 'contact_list.dart';
@@ -10,7 +12,7 @@ class Nostr {
   String _privateKey;
   String _publicKey = '';
   final int powDifficulty;
-  final pool = RelayPool();
+  late RelayPool pool;
   final bool disableSignatureVerification;
 
   /// Creates a Nostr client.
@@ -43,6 +45,8 @@ class Nostr {
       this.disableSignatureVerification = false})
       : _privateKey = privateKey {
     _publicKey = privateKey.isNotEmpty ? getPublicKey(privateKey) : '';
+    pool =
+        RelayPool(disableSignatureVerification: disableSignatureVerification);
   }
 
   /// Sets the secret key used for signing events.
